@@ -8,7 +8,7 @@ local HRP = LocalPlayer.Character:WaitForChild("HumanoidRootPart")
 
 local enabledFeatures = false
 local boostedSpeed = 50
-
+ 
 -- Tab Main
 local MainTab = Window:CreateTab("Main")
 
