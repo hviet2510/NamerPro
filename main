@@ -1,0 +1,106 @@
+-- Hahahano Hub | By Hviet2510 | Linoria UI hoàn chỉnh
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/violin-suzutsuki/LinoriaLib/main/Library.lua"))()
+local ThemeManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/violin-suzutsuki/LinoriaLib/main/addons/ThemeManager.lua"))()
+local SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/violin-suzutsuki/LinoriaLib/main/addons/SaveManager.lua"))()
+
+local Window = Library:CreateWindow({
+    Title = 'Hahahano Hub | By Hviet2510',
+    Center = true,
+    AutoShow = true,
+})
+
+local Tabs = {
+    Main = Window:AddTab('Main'),
+    Settings = Window:AddTab('Settings'),
+}
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local Humanoid = LocalPlayer.Character:WaitForChild("Humanoid")
+local HRP = LocalPlayer.Character:WaitForChild("HumanoidRootPart")
+
+-- Fly Toggle
+local flying = false
+local flyBV = nil
+
+Tabs.Main:AddToggle('FlyToggle', {
+	Text = 'Fly (Toggle)',
+	Default = false,
+	Callback = function(Value)
+		flying = Value
+		if flying then
+			flyBV = Instance.new("BodyVelocity", HRP)
+			flyBV.Velocity = Vector3.new(0, 50, 0)
+			flyBV.MaxForce = Vector3.new(10000, 10000, 10000)
+		else
+			if flyBV then
+				flyBV:Destroy()
+				flyBV = nil
+			end
+		end
+	end
+})
+
+-- Speed Toggle
+local normalWalkSpeed = Humanoid.WalkSpeed
+local boostedSpeed = 50
+Tabs.Main:AddToggle('SpeedToggle', {
+	Text = 'Speed x5 (Toggle)',
+	Default = false,
+	Callback = function(Value)
+		if Value then
+			Humanoid.WalkSpeed = boostedSpeed
+		else
+			Humanoid.WalkSpeed = normalWalkSpeed
+		end
+	end
+})
+
+Tabs.Main:AddButton('Reset Speed', function()
+	Humanoid.WalkSpeed = normalWalkSpeed
+end)
+
+-- Biến to
+Tabs.Main:AddButton('Size Up', function()
+	for _, v in ipairs(LocalPlayer.Character:GetDescendants()) do
+		if v:IsA("BasePart") then
+			v.Size = v.Size * 2
+		end
+	end
+end)
+
+-- Biến nhỏ
+Tabs.Main:AddButton('Size Down', function()
+	for _, v in ipairs(LocalPlayer.Character:GetDescendants()) do
+		if v:IsA("BasePart") then
+			v.Size = v.Size * 0.5
+		end
+	end
+end)
+
+-- Get Item by Name
+Tabs.Main:AddInput('ItemName', {
+	Default = '',
+	Placeholder = 'Nhập tên Tool để lấy',
+	Numeric = false,
+	Finished = true,
+	Text = '',
+	Callback = function(itemName)
+		for _, obj in ipairs(workspace:GetDescendants()) do
+			if obj:IsA("Tool") and obj.Name:lower():find(itemName:lower()) then
+				obj.Parent = LocalPlayer.Backpack
+			end
+		end
+	end
+})
+
+-- Theme + Save Settings
+ThemeManager:SetLibrary(Library)
+SaveManager:SetLibrary(Library)
+SaveManager:IgnoreThemeSettings()
+ThemeManager:SetFolder('HahahanoHub')
+SaveManager:SetFolder('HahahanoHub')
+SaveManager:BuildConfigSection(Tabs.Settings)
+ThemeManager:ApplyToTab(Tabs.Settings)
+
+Library:Notify("Hahahano Hub Loaded!")
