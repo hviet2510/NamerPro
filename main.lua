@@ -6,11 +6,13 @@ local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
 local HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
 local Humanoid = Character:WaitForChild("Humanoid")
 
-local Speed = 5 -- Tốc độ tween, chỉnh chậm hơn để tránh bị kick
+local Speed = 10 -- Tốc độ tween, chỉnh chậm hơn để tránh bị kick
+local AttackDistance = 25 -- Khoảng cách tấn công xa hơn mặc định
+local HeightOffset = 17 -- Nâng lên cao để tránh bị đánh trúng
 
 local function TweenTo(pos, speed)
     local tweenInfo = TweenInfo.new(speed or Speed, Enum.EasingStyle.Linear)
-    local goal = {CFrame = CFrame.new(pos)}
+    local goal = {CFrame = CFrame.new(pos + Vector3.new(0, HeightOffset, 0))}
     local tween = TweenService:Create(HumanoidRootPart, tweenInfo, goal)
     tween:Play()
     tween.Completed:Wait()
@@ -107,15 +109,20 @@ spawn(function()
                 StartQuest(questData.Quest)
                 local mob = FindNearestEnemy(questData.Enemy)
                 if mob then
-                    TweenTo(mob.HumanoidRootPart.Position + Vector3.new(0, 5, 0), Speed)
+                    TweenTo(mob.HumanoidRootPart.Position, Speed)
                     EquipMelee()
                     while mob and mob.Parent and mob:FindFirstChild("Humanoid") and mob.Humanoid.Health > 0 and isAutoFarm do
-                        HumanoidRootPart.CFrame = mob.HumanoidRootPart.CFrame * CFrame.new(0, 3, 0)
+                        if (mob.HumanoidRootPart.Position - HumanoidRootPart.Position).Magnitude > AttackDistance then
+                            HumanoidRootPart.CFrame = mob.HumanoidRootPart.CFrame * CFrame.new(0, HeightOffset, AttackDistance * -1)
+                        else
+                            HumanoidRootPart.CFrame = mob.HumanoidRootPart.CFrame * CFrame.new(0, HeightOffset, 0)
+                        end
                         local tool = LocalPlayer.Character:FindFirstChildOfClass("Tool")
                         if tool then
                             tool:Activate()
+                            tool:Activate()
                         end
-                        task.wait()
+                        task.wait(0.15)
                     end
                 end
             end
