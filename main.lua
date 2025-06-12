@@ -4,22 +4,21 @@ local TweenService = game:GetService("TweenService")
 local LocalPlayer = Players.LocalPlayer
 local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
 local HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
-local Humanoid = Character:WaitForChild("Humanoid")
 
-local Speed = 10
-local AttackDistance = 25
-local HeightOffset = 25
+local Speed = 8
+local Height = 15
+local AttackDistance = 20
 
-local function TweenTo(pos, speed)
-    local tweenInfo = TweenInfo.new(speed or Speed, Enum.EasingStyle.Linear)
-    local goal = {CFrame = CFrame.new(pos + Vector3.new(0, HeightOffset, 0))}
-    local tween = TweenService:Create(HumanoidRootPart, tweenInfo, goal)
+local function TweenTo(position)
+    local info = TweenInfo.new(Speed, Enum.EasingStyle.Linear)
+    local goal = {CFrame = CFrame.new(position + Vector3.new(0, Height, 0))}
+    local tween = TweenService:Create(HumanoidRootPart, info, goal)
     tween:Play()
     tween.Completed:Wait()
 end
 
 local function EquipMelee()
-    for _, tool in ipairs(LocalPlayer.Backpack:GetChildren()) do
+    for _, tool in pairs(LocalPlayer.Backpack:GetChildren()) do
         if tool:IsA("Tool") and not string.find(tool.Name, "Gun") then
             tool.Parent = LocalPlayer.Character
             return tool
@@ -47,40 +46,35 @@ local LevelQuests = {
 }
 
 local function GetQuestForLevel(lv)
-    local result = nil
-    for _, data in pairs(LevelQuests) do
+    local quest = nil
+    for _, data in ipairs(LevelQuests) do
         if lv >= data.Level then
-            result = data
+            quest = data
         else
             break
         end
     end
-    return result
+    return quest
 end
 
 local function StartQuest(questName)
     ReplicatedStorage.Remotes.CommF_:InvokeServer("StartQuest", questName, 1)
 end
 
-local function FindNearestEnemy(enemyName)
-    local nearest, dist = nil, math.huge
-    for _, mob in pairs(workspace.Enemies:GetChildren()) do
-        if mob.Name == enemyName and mob:FindFirstChild("Humanoid") and mob.Humanoid.Health > 0 then
-            local d = (mob.HumanoidRootPart.Position - HumanoidRootPart.Position).Magnitude
-            if d < dist then
-                nearest = mob
-                dist = d
-            end
+local function FindEnemy(enemyName)
+    for _, enemy in pairs(workspace.Enemies:GetChildren()) do
+        if enemy.Name == enemyName and enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 then
+            return enemy
         end
     end
-    return nearest
 end
 
+-- UI
 local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
-ScreenGui.Name = "BFAutoFarmUI"
+ScreenGui.Name = "SpeedXFarm"
 
 local Toggle = Instance.new("TextButton", ScreenGui)
-Toggle.Size = UDim2.new(0, 150, 0, 40)
+Toggle.Size = UDim2.new(0, 140, 0, 40)
 Toggle.Position = UDim2.new(0, 10, 0, 10)
 Toggle.Text = "AutoFarm: OFF"
 Toggle.BackgroundColor3 = Color3.fromRGB(35, 90, 160)
@@ -88,52 +82,36 @@ Toggle.TextColor3 = Color3.fromRGB(255, 255, 255)
 Toggle.Font = Enum.Font.GothamBold
 Toggle.TextScaled = true
 
-local isAutoFarm = false
+local isFarming = false
 
 Toggle.MouseButton1Click:Connect(function()
-    isAutoFarm = not isAutoFarm
-    Toggle.Text = isAutoFarm and "AutoFarm: ON" or "AutoFarm: OFF"
-    Toggle.BackgroundColor3 = isAutoFarm and Color3.fromRGB(200, 50, 50) or Color3.fromRGB(35, 90, 160)
+    isFarming = not isFarming
+    Toggle.Text = isFarming and "AutoFarm: ON" or "AutoFarm: OFF"
+    Toggle.BackgroundColor3 = isFarming and Color3.fromRGB(200, 50, 50) or Color3.fromRGB(35, 90, 160)
 end)
 
-spawn(function()
+task.spawn(function()
     while task.wait(1) do
-        if isAutoFarm then
-            local plrLv = LocalPlayer.Data.Level.Value
-            local questData = GetQuestForLevel(plrLv)
+        if isFarming then
+            local lv = LocalPlayer.Data.Level.Value
+            local questData = GetQuestForLevel(lv)
             if questData then
                 StartQuest(questData.Quest)
-                local mob = FindNearestEnemy(questData.Enemy)
-                if mob then
-                    TweenTo(mob.HumanoidRootPart.Position, Speed)
+                local enemy = FindEnemy(questData.Enemy)
+                if enemy then
+                    TweenTo(enemy.HumanoidRootPart.Position)
                     EquipMelee()
-                    while mob and mob.Parent and mob:FindFirstChild("Humanoid") and mob.Humanoid.Health > 0 and isAutoFarm do
-                        if (mob.HumanoidRootPart.Position - HumanoidRootPart.Position).Magnitude > AttackDistance then
-                            HumanoidRootPart.CFrame = mob.HumanoidRootPart.CFrame * CFrame.new(0, HeightOffset, AttackDistance * -1)
-                        else
-                            HumanoidRootPart.CFrame = mob.HumanoidRootPart.CFrame * CFrame.new(0, HeightOffset, 0)
-                        end
+                    while enemy and enemy.Parent and enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 and isFarming do
+                        HumanoidRootPart.CFrame = enemy.HumanoidRootPart.CFrame * CFrame.new(0, Height, -AttackDistance)
                         local tool = LocalPlayer.Character:FindFirstChildOfClass("Tool")
                         if tool then
-                            tool:Activate()
-                            tool:Activate()
+                            pcall(function()
+                                tool:Activate()
+                            end)
                         end
-                        task.wait(0.05)
+                        task.wait(0.1)
                     end
                 end
-            end
-        end
-    end
-end)
-
-spawn(function()
-    while task.wait(0.05) do
-        if isAutoFarm then
-            local tool = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Tool")
-            if tool then
-                pcall(function()
-                    tool:Activate()
-                end)
             end
         end
     end
