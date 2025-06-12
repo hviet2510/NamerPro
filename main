@@ -1,26 +1,97 @@
--- Blox Fruits - Auto Farm Level 3rd Sea with Fluent UI (Demo Script) local Players = game:GetService("Players") local LocalPlayer = Players.LocalPlayer local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait() local HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+local HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
 
-local function TweenTo(pos) local tweenService = game:GetService("TweenService") local tweenInfo = TweenInfo.new(3, Enum.EasingStyle.Linear) local goal = {CFrame = CFrame.new(pos)} local tween = tweenService:Create(HumanoidRootPart, tweenInfo, goal) tween:Play() tween.Completed:Wait() end
+local function TweenTo(pos)
+local tweenService = game:GetService("TweenService")
+local tweenInfo = TweenInfo.new(3, Enum.EasingStyle.Linear)
+local goal = {CFrame = CFrame.new(pos)}
+local tween = tweenService:Create(HumanoidRootPart, tweenInfo, goal)
+tween:Play()
+tween.Completed:Wait()
+end
 
--- Danh sách quái 3rd Sea demo (thêm đủ tên quái theo zone bạn muốn) local EnemyList = { "Pirate Recruit", "Elite Pirate", "God's Guard", "Shanda" }
+local EnemyList = {
+"Pirate Recruit",
+"Elite Pirate",
+"God's Guard",
+"Shanda"
+}
 
--- Hàm tìm quái gần nhất local function FindNearestEnemy() local nearest, dist = nil, math.huge for _, mob in pairs(workspace.Enemies:GetChildren()) do if table.find(EnemyList, mob.Name) and mob:FindFirstChild("Humanoid") and mob.Humanoid.Health > 0 then local d = (mob.HumanoidRootPart.Position - HumanoidRootPart.Position).Magnitude if d < dist then nearest = mob dist = d end end end return nearest end
+local function FindNearestEnemy()
+local nearest, dist = nil, math.huge
+for _, mob in pairs(workspace.Enemies:GetChildren()) do
+if table.find(EnemyList, mob.Name) and mob:FindFirstChild("Humanoid") and mob.Humanoid.Health > 0 then
+local d = (mob.HumanoidRootPart.Position - HumanoidRootPart.Position).Magnitude
+if d < dist then
+nearest = mob
+dist = d
+end
+end
+end
+return nearest
+end
 
--- UI Setup local ScreenGui = Instance.new("ScreenGui", game.CoreGui) ScreenGui.Name = "BF_AutoFarmUI"
+local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
+ScreenGui.Name = "BF_AutoFarmUI"
 
-local Frame = Instance.new("Frame", ScreenGui) Frame.Size = UDim2.new(0, 420, 0, 300) Frame.Position = UDim2.new(0.5, -210, 0.5, -150) Frame.BackgroundColor3 = Color3.fromRGB(24, 24, 28) local UICorner = Instance.new("UICorner", Frame) UICorner.CornerRadius = UDim.new(0, 12)
+local Frame = Instance.new("Frame", ScreenGui)
+Frame.Size = UDim2.new(0, 420, 0, 300)
+Frame.Position = UDim2.new(0.5, -210, 0.5, -150)
+Frame.BackgroundColor3 = Color3.fromRGB(24, 24, 28)
+local UICorner = Instance.new("UICorner", Frame)
+UICorner.CornerRadius = UDim.new(0, 12)
 
-local Title = Instance.new("TextLabel", Frame) Title.Text = "Blox Fruits - Auto Farm 3rd Sea" Title.Size = UDim2.new(1, -20, 0, 35) Title.Position = UDim2.new(0, 10, 0, 10) Title.BackgroundTransparency = 1 Title.TextColor3 = Color3.fromRGB(255, 255, 255) Title.Font = Enum.Font.GothamSemibold Title.TextScaled = true Title.TextXAlignment = Enum.TextXAlignment.Left
+local Title = Instance.new("TextLabel", Frame)
+Title.Text = "Blox Fruits - Auto Farm 3rd Sea"
+Title.Size = UDim2.new(1, -20, 0, 35)
+Title.Position = UDim2.new(0, 10, 0, 10)
+Title.BackgroundTransparency = 1
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.Font = Enum.Font.GothamSemibold
+Title.TextScaled = true
+Title.TextXAlignment = Enum.TextXAlignment.Left
 
-local Toggle = Instance.new("TextButton", Frame) Toggle.Size = UDim2.new(0, 180, 0, 45) Toggle.Position = UDim2.new(0, 20, 0, 60) Toggle.Text = "Bật Auto Farm" Toggle.BackgroundColor3 = Color3.fromRGB(35, 90, 160) Toggle.TextColor3 = Color3.fromRGB(255, 255, 255) Toggle.Font = Enum.Font.GothamBold Toggle.TextScaled = true local ToggleCorner = Instance.new("UICorner", Toggle) ToggleCorner.CornerRadius = UDim.new(0, 8)
+local Toggle = Instance.new("TextButton", Frame)
+Toggle.Size = UDim2.new(0, 180, 0, 45)
+Toggle.Position = UDim2.new(0, 20, 0, 60)
+Toggle.Text = "Bật Auto Farm"
+Toggle.BackgroundColor3 = Color3.fromRGB(35, 90, 160)
+Toggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+Toggle.Font = Enum.Font.GothamBold
+Toggle.TextScaled = true
+local ToggleCorner = Instance.new("UICorner", Toggle)
+ToggleCorner.CornerRadius = UDim.new(0, 8)
 
 local isFarming = false
 
-Toggle.MouseButton1Click:Connect(function() isFarming = not isFarming Toggle.Text = isFarming and "Tắt Auto Farm" or "Bật Auto Farm" Toggle.BackgroundColor3 = isFarming and Color3.fromRGB(200, 50, 50) or Color3.fromRGB(35, 90, 160) end)
+Toggle.MouseButton1Click:Connect(function()
+isFarming = not isFarming
+Toggle.Text = isFarming and "Tắt Auto Farm" or "Bật Auto Farm"
+Toggle.BackgroundColor3 = isFarming and Color3.fromRGB(200, 50, 50) or Color3.fromRGB(35, 90, 160)
+end)
 
--- Nút chat dạng logo bật/tắt UI local LogoButton = Instance.new("TextButton", ScreenGui) LogoButton.Size = UDim2.new(0, 50, 0, 50) LogoButton.Position = UDim2.new(0, 20, 0.5, -25) LogoButton.BackgroundColor3 = Color3.fromRGB(35, 90, 160) LogoButton.Text = "💬" LogoButton.TextColor3 = Color3.fromRGB(255, 255, 255) LogoButton.Font = Enum.Font.GothamBold LogoButton.TextScaled = true local LogoCorner = Instance.new("UICorner", LogoButton) LogoCorner.CornerRadius = UDim.new(1, 0)
+spawn(function()
+while task.wait(0.5) do
+if isFarming then
+local mob = FindNearestEnemy()
+if mob then
+TweenTo(mob.HumanoidRootPart.Position + Vector3.new(0, 3, 0))
+while mob and mob.Parent and mob:FindFirstChild("Humanoid") and mob.Humanoid.Health > 0 and isFarming do
+pcall(function()
+HumanoidRootPart.CFrame = mob.HumanoidRootPart.CFrame * CFrame.new(0, 3, 0)
+local tool = LocalPlayer.Character:FindFirstChildOfClass("Tool")
+if tool then
+tool:Activate()
+end
+end)
+task.wait()
+end
+end
+end
+end
+end)
 
-LogoButton.MouseButton1Click:Connect(function() Frame.Visible = not Frame.Visible end) Frame.Visible = false
-
--- Loop farm chính spawn(function() while task.wait(0.5) do if isFarming then local mob = FindNearestEnemy() if mob then TweenTo(mob.HumanoidRootPart.Position + Vector3.new(0, 3, 0)) while mob and mob.Parent and mob:FindFirstChild("Humanoid") and mob.Humanoid.Health > 0 and isFarming do pcall(function() HumanoidRootPart.CFrame = mob.HumanoidRootPart.CFrame * CFrame.new(0, 3, 0) local tool = LocalPlayer.Character:FindFirstChildOfClass("Tool") if tool then tool:Activate() end end) task.wait() end end end end end)
+Frame.Visible = true
 
