@@ -1,14 +1,14 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local LocalPlayer = Players.LocalPlayer
 local TweenService = game:GetService("TweenService")
+local LocalPlayer = Players.LocalPlayer
 local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
 local HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
 local Humanoid = Character:WaitForChild("Humanoid")
 
-local Speed = 10 -- Tốc độ tween, chỉnh chậm hơn để tránh bị kick
-local AttackDistance = 25 -- Khoảng cách tấn công xa hơn mặc định
-local HeightOffset = 17 -- Nâng lên cao để tránh bị đánh trúng
+local Speed = 10
+local AttackDistance = 25
+local HeightOffset = 25
 
 local function TweenTo(pos, speed)
     local tweenInfo = TweenInfo.new(speed or Speed, Enum.EasingStyle.Linear)
@@ -59,11 +59,7 @@ local function GetQuestForLevel(lv)
 end
 
 local function StartQuest(questName)
-    local args = {
-        [1] = questName,
-        [2] = 1
-    }
-    ReplicatedStorage.Remotes.CommF_:InvokeServer("StartQuest", unpack(args))
+    ReplicatedStorage.Remotes.CommF_:InvokeServer("StartQuest", questName, 1)
 end
 
 local function FindNearestEnemy(enemyName)
@@ -122,9 +118,22 @@ spawn(function()
                             tool:Activate()
                             tool:Activate()
                         end
-                        task.wait(0.15)
+                        task.wait(0.05)
                     end
                 end
+            end
+        end
+    end
+end)
+
+spawn(function()
+    while task.wait(0.05) do
+        if isAutoFarm then
+            local tool = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Tool")
+            if tool then
+                pcall(function()
+                    tool:Activate()
+                end)
             end
         end
     end
