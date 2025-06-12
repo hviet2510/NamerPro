@@ -1,32 +1,31 @@
-local Rayfield = loadstring(game:HttpGet('https://raw.githubusercontent.com/shlexware/Rayfield/main/source'))()
+-- Hahahano Hub | By Hviet2510 | Linoria UI
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/violin-suzutsuki/LinoriaLib/main/Library.lua"))()
+local ThemeManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/violin-suzutsuki/LinoriaLib/main/addons/ThemeManager.lua"))()
+local SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/violin-suzutsuki/LinoriaLib/main/addons/SaveManager.lua"))()
 
-local Window = Rayfield:CreateWindow({
-   Name = "Hahahano Hub | By Hviet2510",
-   LoadingTitle = "Hahahano Hub",
-   LoadingSubtitle = "by Hviet2510",
-   ConfigurationSaving = {
-      Enabled = false
-   },
-   Discord = {
-      Enabled = false
-   },
-   KeySystem = false
+local Window = Library:CreateWindow({
+    Title = 'Hahahano Hub | By Hviet2510',
+    Center = true,
+    AutoShow = true,
 })
 
-local MainTab = Window:CreateTab("Main Features", 4483362458)
+local Tabs = {
+    Main = Window:AddTab('Main'),
+    Settings = Window:AddTab('Settings'),
+}
 
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local Humanoid = LocalPlayer.Character:WaitForChild("Humanoid")
 local HRP = LocalPlayer.Character:WaitForChild("HumanoidRootPart")
 
--- Fly Toggle
+-- Fly
 local flying = false
 local flyBV = nil
 
-MainTab:CreateToggle({
-	Name = "Fly (Toggle)",
-	CurrentValue = false,
+Tabs.Main:AddToggle('FlyToggle', {
+	Text = 'Fly (Toggle)',
+	Default = false,
 	Callback = function(Value)
 		flying = Value
 		if flying then
@@ -42,17 +41,14 @@ MainTab:CreateToggle({
 	end
 })
 
--- Speed Toggle
-local speedEnabled = false
+-- Speed
 local normalWalkSpeed = Humanoid.WalkSpeed
 local boostedSpeed = 50
-
-MainTab:CreateToggle({
-	Name = "Speed x5 (Toggle)",
-	CurrentValue = false,
+Tabs.Main:AddToggle('SpeedToggle', {
+	Text = 'Speed x5 (Toggle)',
+	Default = false,
 	Callback = function(Value)
-		speedEnabled = Value
-		if speedEnabled then
+		if Value then
 			Humanoid.WalkSpeed = boostedSpeed
 		else
 			Humanoid.WalkSpeed = normalWalkSpeed
@@ -60,32 +56,25 @@ MainTab:CreateToggle({
 	end
 })
 
-MainTab:CreateButton({
-	Name = "Reset Speed",
-	Callback = function()
-		Humanoid.WalkSpeed = normalWalkSpeed
-		speedEnabled = false
-	end
-})
+Tabs.Main:AddButton('Reset Speed', function()
+	Humanoid.WalkSpeed = normalWalkSpeed
+end)
 
-MainTab:CreateButton({
-	Name = "Size Up",
-	Callback = function()
-		LocalPlayer.Character.Humanoid.BodyScale = Vector3.new(2,2,2)
-	end
-})
+-- Size
+Tabs.Main:AddButton('Size Up', function()
+	LocalPlayer.Character.Humanoid.BodyScale = Vector3.new(2,2,2)
+end)
 
-MainTab:CreateButton({
-	Name = "Size Down",
-	Callback = function()
-		LocalPlayer.Character.Humanoid.BodyScale = Vector3.new(0.5,0.5,0.5)
-	end
-})
+Tabs.Main:AddButton('Size Down', function()
+	LocalPlayer.Character.Humanoid.BodyScale = Vector3.new(0.5,0.5,0.5)
+end)
 
-MainTab:CreateInput({
-	Name = "Get Tool by Name",
-	PlaceholderText = "Nhập tên Tool",
-	RemoveTextAfterFocusLost = true,
+Tabs.Main:AddInput('ItemName', {
+	Default = '',
+	Placeholder = 'Nhập tên Tool để lấy',
+	Numeric = false,
+	Finished = true,
+	Text = '',
 	Callback = function(itemName)
 		for _, obj in ipairs(workspace:GetDescendants()) do
 			if obj:IsA("Tool") and obj.Name:lower():find(itemName:lower()) then
@@ -94,3 +83,14 @@ MainTab:CreateInput({
 		end
 	end
 })
+
+-- Theme + Save
+ThemeManager:SetLibrary(Library)
+SaveManager:SetLibrary(Library)
+SaveManager:IgnoreThemeSettings()
+ThemeManager:SetFolder('HahahanoHub')
+SaveManager:SetFolder('HahahanoHub')
+SaveManager:BuildConfigSection(Tabs.Settings)
+ThemeManager:ApplyToTab(Tabs.Settings)
+
+Library:Notify("Hahahano Hub Loaded!")
