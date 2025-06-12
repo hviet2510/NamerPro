@@ -1,1 +1,89 @@
+-- Hahahano Hub - Roblox Admin UI by Hviet2510
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
 
+-- UI setup
+local ScreenGui = Instance.new("ScreenGui", LocalPlayer.PlayerGui)
+ScreenGui.ResetOnSpawn = false
+
+local Frame = Instance.new("Frame", ScreenGui)
+Frame.Size = UDim2.new(0, 300, 0, 400)
+Frame.Position = UDim2.new(0.5, -150, 0.5, -200)
+Frame.BackgroundColor3 = Color3.fromRGB(35,35,35)
+Instance.new("UICorner", Frame)
+
+local Title = Instance.new("TextLabel", Frame)
+Title.Text = "Hahahano Hub"
+Title.Size = UDim2.new(1,0,0,50)
+Title.BackgroundTransparency = 1
+Title.TextColor3 = Color3.fromRGB(255,255,255)
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 22
+
+-- Tạo nút
+function CreateButton(text, order, callback)
+	local btn = Instance.new("TextButton", Frame)
+	btn.Size = UDim2.new(0.8,0,0,40)
+	btn.Position = UDim2.new(0.1,0,0.15 + (order * 0.13),0)
+	btn.Text = text
+	btn.BackgroundColor3 = Color3.fromRGB(50,50,50)
+	btn.TextColor3 = Color3.fromRGB(255,255,255)
+	btn.Font = Enum.Font.Gotham
+	btn.TextSize = 18
+	Instance.new("UICorner", btn)
+	btn.MouseButton1Click:Connect(callback)
+	return btn
+end
+
+-- Fly
+CreateButton("🚀 Fly (10s)", 0, function()
+	local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+	local hrp = char:FindFirstChild("HumanoidRootPart")
+	if hrp then
+		local bv = Instance.new("BodyVelocity", hrp)
+		bv.Velocity = Vector3.new(0,50,0)
+		bv.MaxForce = Vector3.new(10000,10000,10000)
+		game:GetService("Debris"):AddItem(bv, 10)
+	end
+end)
+
+-- Tăng tốc chạy
+CreateButton("⚡ Speed x3", 1, function()
+	local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+	if hum then hum.WalkSpeed = 48 end -- mặc định 16
+end)
+
+-- Reset tốc độ
+CreateButton("🚶 Speed Reset", 2, function()
+	local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+	if hum then hum.WalkSpeed = 16 end
+end)
+
+-- Biến to
+CreateButton("🔺 Size Up", 3, function()
+	local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+	for _, part in pairs(char:GetChildren()) do
+		if part:IsA("BasePart") then
+			part.Size = part.Size * 1.5
+		end
+	end
+end)
+
+-- Biến nhỏ
+CreateButton("🔻 Size Down", 4, function()
+	local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+	for _, part in pairs(char:GetChildren()) do
+		if part:IsA("BasePart") then
+			part.Size = part.Size * 0.5
+		end
+	end
+end)
+
+-- Get Item (phải có sẵn trong ReplicatedStorage)
+CreateButton("🎁 Get Item (ToolName)", 5, function()
+	local toolname = "Sword" -- Đổi tên Tool muốn lấy ở đây hoặc thêm TextBox sau
+	local tool = game.ReplicatedStorage:FindFirstChild(toolname)
+	if tool then
+		tool:Clone().Parent = LocalPlayer.Backpack
+	end
+end)
