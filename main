@@ -1,23 +1,22 @@
-local Kavo = loadstring(game:HttpGet("https://raw.githubusercontent.com/shlexware/Kavo-UI-Library/main/source.lua"))()
-local Window = Kavo.CreateLib("Hahahano Hub | By Hviet2510", "DarkTheme")
+local RedzUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/REDzHUB/REDz/main/UiLib.lua"))()
 
-local MainTab = Window:NewTab("Main")
-local MainSection = MainTab:NewSection("Tính năng chính")
-
-local SettingsTab = Window:NewTab("Settings")
-local SettingsSection = SettingsTab:NewSection("Cài đặt")
+local Window = RedzUI:CreateWindow("Hahahano Hub", "By Hviet2510", 10044538000)
+local MainTab = Window:CreateTab("Main")
+local AdminTab = Window:CreateTab("Admin")
+local SettingsTab = Window:CreateTab("Settings")
 
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local Humanoid = LocalPlayer.Character:WaitForChild("Humanoid")
 local HRP = LocalPlayer.Character:WaitForChild("HumanoidRootPart")
 
-local enabledFeatures = false -- Toggle tổng
+local enabledFeatures = false
 local boostedSpeed = 50
 
-SettingsSection:NewToggle("Bật tất cả chức năng", "Bật/tắt toàn bộ tính năng", function(state)
-	enabledFeatures = state
-	if not state then
+-- Toggle Tổng
+SettingsTab:CreateToggle("Bật tất cả chức năng", function(Value)
+	enabledFeatures = Value
+	if not Value then
 		Humanoid.WalkSpeed = 16
 		if HRP:FindFirstChild("FlyVelocity") then
 			HRP.FlyVelocity:Destroy()
@@ -25,8 +24,9 @@ SettingsSection:NewToggle("Bật tất cả chức năng", "Bật/tắt toàn b�
 	end
 end)
 
-MainSection:NewToggle("Fly", "Bay lên trời (phụ thuộc bật tổng)", function(state)
-	if enabledFeatures and state then
+-- Fly
+MainTab:CreateToggle("Fly (Bay)", function(Value)
+	if enabledFeatures and Value then
 		local fly = Instance.new("BodyVelocity", HRP)
 		fly.Name = "FlyVelocity"
 		fly.Velocity = Vector3.new(0, 50, 0)
@@ -38,15 +38,17 @@ MainSection:NewToggle("Fly", "Bay lên trời (phụ thuộc bật tổng)", fun
 	end
 end)
 
-MainSection:NewToggle("Speed x5", "Chạy nhanh (phụ thuộc bật tổng)", function(state)
-	if enabledFeatures and state then
+-- Speed
+MainTab:CreateToggle("Speed x5", function(Value)
+	if enabledFeatures and Value then
 		Humanoid.WalkSpeed = boostedSpeed
 	else
 		Humanoid.WalkSpeed = 16
 	end
 end)
 
-MainSection:NewButton("Size Up", "Biến to nhân vật (phụ thuộc bật tổng)", function()
+-- Size Up
+MainTab:CreateButton("Size Up (To)", function()
 	if enabledFeatures then
 		for _,v in pairs(LocalPlayer.Character:GetDescendants()) do
 			if v:IsA("BasePart") then
@@ -56,7 +58,8 @@ MainSection:NewButton("Size Up", "Biến to nhân vật (phụ thuộc bật t�
 	end
 end)
 
-MainSection:NewButton("Size Down", "Biến nhỏ nhân vật (phụ thuộc bật tổng)", function()
+-- Size Down
+MainTab:CreateButton("Size Down (Nhỏ)", function()
 	if enabledFeatures then
 		for _,v in pairs(LocalPlayer.Character:GetDescendants()) do
 			if v:IsA("BasePart") then
@@ -66,12 +69,37 @@ MainSection:NewButton("Size Down", "Biến nhỏ nhân vật (phụ thuộc bậ
 	end
 end)
 
-MainSection:NewTextBox("Nhập tên item để lấy", "Nhập tên Tool trong map", function(itemName)
+-- Get Item
+MainTab:CreateTextbox("Tên Item", function(Value)
 	if enabledFeatures then
 		for _, obj in ipairs(workspace:GetDescendants()) do
-			if obj:IsA("Tool") and obj.Name:lower():find(itemName:lower()) then
+			if obj:IsA("Tool") and obj.Name:lower():find(Value:lower()) then
 				obj.Parent = LocalPlayer.Backpack
 			end
 		end
+	end
+end)
+
+-- Admin: Teleport
+AdminTab:CreateTextbox("Teleport Người chơi", function(Value)
+	local target = Players:FindFirstChild(Value)
+	if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
+		target.Character.HumanoidRootPart.CFrame = HRP.CFrame + Vector3.new(3,0,0)
+	end
+end)
+
+-- Admin: Kick
+AdminTab:CreateTextbox("Kick Người chơi", function(Value)
+	local target = Players:FindFirstChild(Value)
+	if target then
+		target:Kick("Bạn đã bị kick bởi Admin")
+	end
+end)
+
+-- Admin: Kill
+AdminTab:CreateTextbox("Kill Người chơi", function(Value)
+	local target = Players:FindFirstChild(Value)
+	if target and target.Character and target.Character:FindFirstChild("Humanoid") then
+		target.Character.Humanoid.Health = 0
 	end
 end)
