@@ -1,8 +1,19 @@
--- Hahahano Hub | By Hviet2510
--- UI sử dụng thư viện OrionLib
+local Rayfield = loadstring(game:HttpGet('https://raw.githubusercontent.com/shlexware/Rayfield/main/source'))()
 
-local OrionLib = loadstring(game:HttpGet("https://raw.githubusercontent.com/shlexware/Orion/main/source"))()
-local Window = OrionLib:MakeWindow({Name = "Hahahano Hub | By Hviet2510", HidePremium = false, SaveConfig = false, IntroEnabled = false})
+local Window = Rayfield:CreateWindow({
+   Name = "Hahahano Hub | By Hviet2510",
+   LoadingTitle = "Hahahano Hub",
+   LoadingSubtitle = "by Hviet2510",
+   ConfigurationSaving = {
+      Enabled = false
+   },
+   Discord = {
+      Enabled = false
+   },
+   KeySystem = false
+})
+
+local MainTab = Window:CreateTab("Main Features", 4483362458)
 
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
@@ -13,17 +24,9 @@ local HRP = LocalPlayer.Character:WaitForChild("HumanoidRootPart")
 local flying = false
 local flyBV = nil
 
--- Speed Toggle
-local speedEnabled = false
-local normalWalkSpeed = Humanoid.WalkSpeed
-local boostedSpeed = 50
-
--- UI Tabs
-local MainTab = Window:MakeTab({Name = "Main", Icon = "rbxassetid://4483345998", PremiumOnly = false})
-
-MainTab:AddToggle({
+MainTab:CreateToggle({
 	Name = "Fly (Toggle)",
-	Default = false,
+	CurrentValue = false,
 	Callback = function(Value)
 		flying = Value
 		if flying then
@@ -39,9 +42,14 @@ MainTab:AddToggle({
 	end
 })
 
-MainTab:AddToggle({
+-- Speed Toggle
+local speedEnabled = false
+local normalWalkSpeed = Humanoid.WalkSpeed
+local boostedSpeed = 50
+
+MainTab:CreateToggle({
 	Name = "Speed x5 (Toggle)",
-	Default = false,
+	CurrentValue = false,
 	Callback = function(Value)
 		speedEnabled = Value
 		if speedEnabled then
@@ -52,7 +60,7 @@ MainTab:AddToggle({
 	end
 })
 
-MainTab:AddButton({
+MainTab:CreateButton({
 	Name = "Reset Speed",
 	Callback = function()
 		Humanoid.WalkSpeed = normalWalkSpeed
@@ -60,24 +68,24 @@ MainTab:AddButton({
 	end
 })
 
-MainTab:AddButton({
+MainTab:CreateButton({
 	Name = "Size Up",
 	Callback = function()
-		LocalPlayer.Character.Humanoid.BodyScale = Vector3.new(2, 2, 2)
+		LocalPlayer.Character.Humanoid.BodyScale = Vector3.new(2,2,2)
 	end
 })
 
-MainTab:AddButton({
+MainTab:CreateButton({
 	Name = "Size Down",
 	Callback = function()
-		LocalPlayer.Character.Humanoid.BodyScale = Vector3.new(0.5, 0.5, 0.5)
+		LocalPlayer.Character.Humanoid.BodyScale = Vector3.new(0.5,0.5,0.5)
 	end
 })
 
-MainTab:AddTextbox({
+MainTab:CreateInput({
 	Name = "Get Tool by Name",
-	Default = "",
-	TextDisappear = true,
+	PlaceholderText = "Nhập tên Tool",
+	RemoveTextAfterFocusLost = true,
 	Callback = function(itemName)
 		for _, obj in ipairs(workspace:GetDescendants()) do
 			if obj:IsA("Tool") and obj.Name:lower():find(itemName:lower()) then
@@ -86,5 +94,3 @@ MainTab:AddTextbox({
 		end
 	end
 })
-
-OrionLib:Init()
