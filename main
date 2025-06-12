@@ -1,100 +1,77 @@
--- Hahahano Hub | By Hviet2510 | Linoria UI FIX hoàn chỉnh
-local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/violin-suzutsuki/LinoriaLib/main/Library.lua"))()
-local ThemeManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/violin-suzutsuki/LinoriaLib/main/addons/ThemeManager.lua"))()
-local SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/violin-suzutsuki/LinoriaLib/main/addons/SaveManager.lua"))()
+local Kavo = loadstring(game:HttpGet("https://raw.githubusercontent.com/shlexware/Kavo-UI-Library/main/source.lua"))()
+local Window = Kavo.CreateLib("Hahahano Hub | By Hviet2510", "DarkTheme")
 
-local Window = Library:CreateWindow({
-	Title = 'Hahahano Hub | By Hviet2510',
-	Center = true,
-	AutoShow = true,
-})
+local MainTab = Window:NewTab("Main")
+local MainSection = MainTab:NewSection("Tính năng chính")
 
-local Tabs = {
-	Main = Window:AddTab('Main'),
-	Settings = Window:AddTab('Settings'),
-}
+local SettingsTab = Window:NewTab("Settings")
+local SettingsSection = SettingsTab:NewSection("Cài đặt")
 
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local Humanoid = LocalPlayer.Character:WaitForChild("Humanoid")
 local HRP = LocalPlayer.Character:WaitForChild("HumanoidRootPart")
 
-local flying = false
-local flyBV = nil
+local enabledFeatures = false -- Toggle tổng
+local boostedSpeed = 50
 
-Tabs.Main:AddToggle('FlyToggle', {
-	Text = 'Fly (Toggle)',
-	Default = false,
-	Callback = function(Value)
-		flying = Value
-		if flying then
-			flyBV = Instance.new("BodyVelocity", HRP)
-			flyBV.Velocity = Vector3.new(0, 50, 0)
-			flyBV.MaxForce = Vector3.new(10000, 10000, 10000)
-		else
-			if flyBV then
-				flyBV:Destroy()
-				flyBV = nil
+SettingsSection:NewToggle("Bật tất cả chức năng", "Bật/tắt toàn bộ tính năng", function(state)
+	enabledFeatures = state
+	if not state then
+		Humanoid.WalkSpeed = 16
+		if HRP:FindFirstChild("FlyVelocity") then
+			HRP.FlyVelocity:Destroy()
+		end
+	end
+end)
+
+MainSection:NewToggle("Fly (phụ thuộc toggle tổng)", "Bay lên trời", function(state)
+	if enabledFeatures and state then
+		local fly = Instance.new("BodyVelocity", HRP)
+		fly.Name = "FlyVelocity"
+		fly.Velocity = Vector3.new(0, 50, 0)
+		fly.MaxForce = Vector3.new(10000, 10000, 10000)
+	else
+		if HRP:FindFirstChild("FlyVelocity") then
+			HRP.FlyVelocity:Destroy()
+		end
+	end
+end)
+
+MainSection:NewToggle("Speed x5 (phụ thuộc toggle tổng)", "Chạy nhanh hơn", function(state)
+	if enabledFeatures and state then
+		Humanoid.WalkSpeed = boostedSpeed
+	else
+		Humanoid.WalkSpeed = 16
+	end
+end)
+
+MainSection:NewButton("Size Up", "Biến to nhân vật", function()
+	if enabledFeatures then
+		for _,v in pairs(LocalPlayer.Character:GetDescendants()) do
+			if v:IsA("BasePart") then
+				v.Size = v.Size * 2
 			end
 		end
 	end
-})
-
-local normalWalkSpeed = Humanoid.WalkSpeed
-local boostedSpeed = 50
-
-Tabs.Main:AddToggle('SpeedToggle', {
-	Text = 'Speed x5 (Toggle)',
-	Default = false,
-	Callback = function(Value)
-		if Value then
-			Humanoid.WalkSpeed = boostedSpeed
-		else
-			Humanoid.WalkSpeed = normalWalkSpeed
-		end
-	end
-})
-
-Tabs.Main:AddButton('Reset Speed', function()
-	Humanoid.WalkSpeed = normalWalkSpeed
 end)
 
-Tabs.Main:AddButton('Size Up', function()
-	for _, v in ipairs(LocalPlayer.Character:GetDescendants()) do
-		if v:IsA("BasePart") then
-			v.Size = v.Size * 2
+MainSection:NewButton("Size Down", "Biến nhỏ nhân vật", function()
+	if enabledFeatures then
+		for _,v in pairs(LocalPlayer.Character:GetDescendants()) do
+			if v:IsA("BasePart") then
+				v.Size = v.Size * 0.5
+			end
 		end
 	end
 end)
 
-Tabs.Main:AddButton('Size Down', function()
-	for _, v in ipairs(LocalPlayer.Character:GetDescendants()) do
-		if v:IsA("BasePart") then
-			v.Size = v.Size * 0.5
-		end
-	end
-end)
-
-Tabs.Main:AddInput('ItemName', {
-	Default = '',
-	Placeholder = 'Nhập tên Tool để lấy',
-	Numeric = false,
-	Finished = true,
-	Callback = function(itemName)
+MainSection:NewTextBox("Nhập tên item để lấy", "Nhập tên tool để lấy từ map", function(itemName)
+	if enabledFeatures then
 		for _, obj in ipairs(workspace:GetDescendants()) do
 			if obj:IsA("Tool") and obj.Name:lower():find(itemName:lower()) then
 				obj.Parent = LocalPlayer.Backpack
 			end
 		end
 	end
-})
-
-ThemeManager:SetLibrary(Library)
-SaveManager:SetLibrary(Library)
-SaveManager:IgnoreThemeSettings()
-ThemeManager:SetFolder('HahahanoHub')
-SaveManager:SetFolder('HahahanoHub')
-SaveManager:BuildConfigSection(Tabs.Settings)
-ThemeManager:ApplyToTab(Tabs.Settings)
-
-Library:Notify("Hahahano Hub Loaded!")
+end)
