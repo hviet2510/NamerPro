@@ -1,98 +1,26 @@
-local BananaUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/bloodball/-back-ups-for-leaks/main/banana%20ui"))()
-local Window = BananaUI:CreateWindow("Hahahano Hub", "By Hviet2510")
+-- Blox Fruits - Auto Farm Level 3rd Sea with Fluent UI (Demo Script) local Players = game:GetService("Players") local LocalPlayer = Players.LocalPlayer local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait() local HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
 
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
-local Humanoid = LocalPlayer.Character:WaitForChild("Humanoid")
-local HRP = LocalPlayer.Character:WaitForChild("HumanoidRootPart")
+local function TweenTo(pos) local tweenService = game:GetService("TweenService") local tweenInfo = TweenInfo.new(3, Enum.EasingStyle.Linear) local goal = {CFrame = CFrame.new(pos)} local tween = tweenService:Create(HumanoidRootPart, tweenInfo, goal) tween:Play() tween.Completed:Wait() end
 
-local enabledFeatures = false
-local boostedSpeed = 50
- 
--- Tab Main
-local MainTab = Window:CreateTab("Main")
+-- Danh sách quái 3rd Sea demo (thêm đủ tên quái theo zone bạn muốn) local EnemyList = { "Pirate Recruit", "Elite Pirate", "God's Guard", "Shanda" }
 
-MainTab:CreateToggle("Bật tất cả chức năng", function(Value)
-	enabledFeatures = Value
-	if not Value then
-		Humanoid.WalkSpeed = 16
-		if HRP:FindFirstChild("FlyVelocity") then
-			HRP.FlyVelocity:Destroy()
-		end
-	end
-end)
+-- Hàm tìm quái gần nhất local function FindNearestEnemy() local nearest, dist = nil, math.huge for _, mob in pairs(workspace.Enemies:GetChildren()) do if table.find(EnemyList, mob.Name) and mob:FindFirstChild("Humanoid") and mob.Humanoid.Health > 0 then local d = (mob.HumanoidRootPart.Position - HumanoidRootPart.Position).Magnitude if d < dist then nearest = mob dist = d end end end return nearest end
 
-MainTab:CreateToggle("Fly (Bay)", function(Value)
-	if enabledFeatures and Value then
-		local fly = Instance.new("BodyVelocity", HRP)
-		fly.Name = "FlyVelocity"
-		fly.Velocity = Vector3.new(0, 50, 0)
-		fly.MaxForce = Vector3.new(10000, 10000, 10000)
-	else
-		if HRP:FindFirstChild("FlyVelocity") then
-			HRP.FlyVelocity:Destroy()
-		end
-	end
-end)
+-- UI Setup local ScreenGui = Instance.new("ScreenGui", game.CoreGui) ScreenGui.Name = "BF_AutoFarmUI"
 
-MainTab:CreateToggle("Speed x5", function(Value)
-	if enabledFeatures and Value then
-		Humanoid.WalkSpeed = boostedSpeed
-	else
-		Humanoid.WalkSpeed = 16
-	end
-end)
+local Frame = Instance.new("Frame", ScreenGui) Frame.Size = UDim2.new(0, 420, 0, 300) Frame.Position = UDim2.new(0.5, -210, 0.5, -150) Frame.BackgroundColor3 = Color3.fromRGB(24, 24, 28) local UICorner = Instance.new("UICorner", Frame) UICorner.CornerRadius = UDim.new(0, 12)
 
-MainTab:CreateButton("Size Up (To)", function()
-	if enabledFeatures then
-		for _,v in pairs(LocalPlayer.Character:GetDescendants()) do
-			if v:IsA("BasePart") then
-				v.Size = v.Size * 2
-			end
-		end
-	end
-end)
+local Title = Instance.new("TextLabel", Frame) Title.Text = "Blox Fruits - Auto Farm 3rd Sea" Title.Size = UDim2.new(1, -20, 0, 35) Title.Position = UDim2.new(0, 10, 0, 10) Title.BackgroundTransparency = 1 Title.TextColor3 = Color3.fromRGB(255, 255, 255) Title.Font = Enum.Font.GothamSemibold Title.TextScaled = true Title.TextXAlignment = Enum.TextXAlignment.Left
 
-MainTab:CreateButton("Size Down (Nhỏ)", function()
-	if enabledFeatures then
-		for _,v in pairs(LocalPlayer.Character:GetDescendants()) do
-			if v:IsA("BasePart") then
-				v.Size = v.Size * 0.5
-			end
-		end
-	end
-end)
+local Toggle = Instance.new("TextButton", Frame) Toggle.Size = UDim2.new(0, 180, 0, 45) Toggle.Position = UDim2.new(0, 20, 0, 60) Toggle.Text = "Bật Auto Farm" Toggle.BackgroundColor3 = Color3.fromRGB(35, 90, 160) Toggle.TextColor3 = Color3.fromRGB(255, 255, 255) Toggle.Font = Enum.Font.GothamBold Toggle.TextScaled = true local ToggleCorner = Instance.new("UICorner", Toggle) ToggleCorner.CornerRadius = UDim.new(0, 8)
 
-MainTab:CreateTextbox("Lấy item (Tool)", function(Value)
-	if enabledFeatures then
-		for _, obj in ipairs(workspace:GetDescendants()) do
-			if obj:IsA("Tool") and obj.Name:lower():find(Value:lower()) then
-				obj.Parent = LocalPlayer.Backpack
-			end
-		end
-	end
-end)
+local isFarming = false
 
--- Tab Admin
-local AdminTab = Window:CreateTab("Admin Tools")
+Toggle.MouseButton1Click:Connect(function() isFarming = not isFarming Toggle.Text = isFarming and "Tắt Auto Farm" or "Bật Auto Farm" Toggle.BackgroundColor3 = isFarming and Color3.fromRGB(200, 50, 50) or Color3.fromRGB(35, 90, 160) end)
 
-AdminTab:CreateTextbox("Teleport người chơi", function(Value)
-	local target = Players:FindFirstChild(Value)
-	if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
-		target.Character.HumanoidRootPart.CFrame = HRP.CFrame + Vector3.new(3,0,0)
-	end
-end)
+-- Nút chat dạng logo bật/tắt UI local LogoButton = Instance.new("TextButton", ScreenGui) LogoButton.Size = UDim2.new(0, 50, 0, 50) LogoButton.Position = UDim2.new(0, 20, 0.5, -25) LogoButton.BackgroundColor3 = Color3.fromRGB(35, 90, 160) LogoButton.Text = "💬" LogoButton.TextColor3 = Color3.fromRGB(255, 255, 255) LogoButton.Font = Enum.Font.GothamBold LogoButton.TextScaled = true local LogoCorner = Instance.new("UICorner", LogoButton) LogoCorner.CornerRadius = UDim.new(1, 0)
 
-AdminTab:CreateTextbox("Kick người chơi (FE không dùng)", function(Value)
-	local target = Players:FindFirstChild(Value)
-	if target then
-		target:Kick("Bạn đã bị kick bởi Admin")
-	end
-end)
+LogoButton.MouseButton1Click:Connect(function() Frame.Visible = not Frame.Visible end) Frame.Visible = false
 
-AdminTab:CreateTextbox("Kill người chơi", function(Value)
-	local target = Players:FindFirstChild(Value)
-	if target and target.Character and target.Character:FindFirstChild("Humanoid") then
-		target.Character.Humanoid.Health = 0
-	end
-end)
+-- Loop farm chính spawn(function() while task.wait(0.5) do if isFarming then local mob = FindNearestEnemy() if mob then TweenTo(mob.HumanoidRootPart.Position + Vector3.new(0, 3, 0)) while mob and mob.Parent and mob:FindFirstChild("Humanoid") and mob.Humanoid.Health > 0 and isFarming do pcall(function() HumanoidRootPart.CFrame = mob.HumanoidRootPart.CFrame * CFrame.new(0, 3, 0) local tool = LocalPlayer.Character:FindFirstChildOfClass("Tool") if tool then tool:Activate() end end) task.wait() end end end end end)
+
