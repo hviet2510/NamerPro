@@ -93,6 +93,12 @@ local function CreateButton(page, text, callback)
 	Button.MouseButton1Click:Connect(callback)
 end
 
+-- Thêm tween info và vị trí đóng/mở
+local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
+local open = true
+local openPos = UDim2.new(0.5, -250, 0.5, -150)
+local closedPos = UDim2.new(0.5, -250, 0.5, -MainFrame.Size.Y.Offset - 20)
+
 -- Nút bật/tắt menu ngoài UI (phải trên, không ảnh, bo góc, kéo được)
 local MenuToggleButton = Instance.new("TextButton")
 MenuToggleButton.Parent = ScreenGui
@@ -112,7 +118,7 @@ MenuToggleButton.MouseButton1Click:Connect(function()
 	TweenService:Create(MainFrame, tweenInfo, goal):Play()
 end)
 
--- Kéo lên xuống
+-- Kéo lên xuống nút
 local draggingButton = false
 local dragInputB, dragStartB, startPosB
 MenuToggleButton.InputBegan:Connect(function(input)
@@ -128,11 +134,13 @@ MenuToggleButton.InputBegan:Connect(function(input)
 		end)
 	end
 end)
+
 MenuToggleButton.InputChanged:Connect(function(input)
 	if input.UserInputType == Enum.UserInputType.MouseMovement then
 		dragInputB = input
 	end
 end)
+
 UIS.InputChanged:Connect(function(input)
 	if input == dragInputB and draggingButton then
 		local delta = input.Position - dragStartB
@@ -145,5 +153,51 @@ end)
 local MainTab = CreateTab("Main")
 CreateButton(MainTab, "Dí!", function()
 	print("Ngon Thí!")
+end)
+local FlyTab = CreateTab("Fly")
+
+local flying = false
+local bodyGyro, bodyVelocity
+local character = game.Players.LocalPlayer.Character or game.Players.LocalPlayer.CharacterAdded:Wait()
+local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+
+local function setFly(state)
+	flying = state
+	if flying then
+		bodyGyro = Instance.new("BodyGyro")
+		bodyGyro.P = 9e4
+		bodyGyro.maxTorque = Vector3.new(9e9, 9e9, 9e9)
+		bodyGyro.cframe = humanoidRootPart.CFrame
+		bodyGyro.Parent = humanoidRootPart
+
+		bodyVelocity = Instance.new("BodyVelocity")
+		bodyVelocity.velocity = Vector3.new(0, 0, 0)
+		bodyVelocity.maxForce = Vector3.new(9e9, 9e9, 9e9)
+		bodyVelocity.Parent = humanoidRootPart
+
+		local connection = game:GetService("RunService").Heartbeat:Connect(function()
+			if not flying then connection:Disconnect() return end
+
+			local camera = workspace.CurrentCamera
+			local moveDirection = Vector3.new()
+			if UIS:IsKeyDown(Enum.KeyCode.W) then moveDirection = moveDirection + camera.CFrame.LookVector end
+			if UIS:IsKeyDown(Enum.KeyCode.S) then moveDirection = moveDirection - camera.CFrame.LookVector end
+			if UIS:IsKeyDown(Enum.KeyCode.A) then moveDirection = moveDirection - camera.CFrame.RightVector end
+			if UIS:IsKeyDown(Enum.KeyCode.D) then moveDirection = moveDirection + camera.CFrame.RightVector end
+			if UIS:IsKeyDown(Enum.KeyCode.Space) then moveDirection = moveDirection + Vector3.new(0, 1, 0) end
+			if UIS:IsKeyDown(Enum.KeyCode.LeftControl) then moveDirection = moveDirection - Vector3.new(0, 1, 0) end
+
+			bodyVelocity.Velocity = moveDirection.Unit * 50
+			bodyGyro.CFrame = camera.CFrame
+		end)
+	else
+		if bodyGyro then bodyGyro:Destroy() end
+		if bodyVelocity then bodyVelocity:Destroy() end
+	end
+end
+
+-- ✅ Thêm toggle Fly vào tab Fly
+CreateToggle(FlyTab, "Fly", false, function(state)
+	setFly(state)
 end)
 MainTab.Visible = true
