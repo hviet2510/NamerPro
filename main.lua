@@ -93,47 +93,13 @@ local function CreateButton(page, text, callback)
 	Button.MouseButton1Click:Connect(callback)
 end
 
--- Animation Close/Open
-local open = true
-local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-local closedPos = UDim2.new(0.5, -250, 0.5, -400)
-local openPos = UDim2.new(0.5, -250, 0.5, -150)
-
--- Dragging MainFrame
-local dragging = false
-local dragInput, dragStart, startPos
-TitleBar.InputBegan:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 then
-		dragging = true
-		dragStart = input.Position
-		startPos = MainFrame.Position
-
-		input.Changed:Connect(function()
-			if input.UserInputState == Enum.UserInputState.End then
-				dragging = false
-			end
-		end)
-	end
-end)
-TitleBar.InputChanged:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseMovement then
-		dragInput = input
-	end
-end)
-UIS.InputChanged:Connect(function(input)
-	if input == dragInput and dragging then
-		local delta = input.Position - dragStart
-		MainFrame.Position = startPos + UDim2.new(0, delta.X, 0, delta.Y)
-	end
-end)
-
 -- Nút bật/tắt menu ngoài UI (phải trên, không ảnh, bo góc, kéo được)
 local MenuToggleButton = Instance.new("TextButton")
 MenuToggleButton.Parent = ScreenGui
 MenuToggleButton.Size = UDim2.new(0, 40, 0, 40)
 MenuToggleButton.Position = UDim2.new(1, -50, 0, 20)
 MenuToggleButton.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-MenuToggleButton.Text = "≡"
+MenuToggleButton.Text = "🌚"
 MenuToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 MenuToggleButton.Font = Enum.Font.GothamBold
 MenuToggleButton.TextSize = 18
@@ -177,7 +143,7 @@ end)
 
 -- Example Tab + Button
 local MainTab = CreateTab("Main")
-CreateButton(MainTab, "Click Me!", function()
-	print("Clicked!")
+CreateButton(MainTab, "Dí!", function()
+	print("Ngon Thí!")
 end)
 MainTab.Visible = true
