@@ -31,16 +31,6 @@ Title.Font = Enum.Font.GothamBold
 Title.TextSize = 16
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
-local CloseButton = Instance.new("TextButton", TitleBar)
-CloseButton.Size = UDim2.new(0, 30, 1, 0)
-CloseButton.Position = UDim2.new(1, -35, 0, 0)
-CloseButton.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-CloseButton.Text = "X"
-CloseButton.TextColor3 = Color3.fromRGB(255, 100, 100)
-CloseButton.Font = Enum.Font.GothamBold
-CloseButton.TextSize = 16
-Instance.new("UICorner", CloseButton).CornerRadius = UDim.new(0, 8)
-
 -- Tabs Holder
 local TabsFrame = Instance.new("Frame", MainFrame)
 TabsFrame.Size = UDim2.new(0, 120, 1, -35)
@@ -109,13 +99,7 @@ local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection
 local closedPos = UDim2.new(0.5, -250, 0.5, -400)
 local openPos = UDim2.new(0.5, -250, 0.5, -150)
 
-CloseButton.MouseButton1Click:Connect(function()
-	open = not open
-	local goal = {Position = open and openPos or closedPos}
-	TweenService:Create(MainFrame, tweenInfo, goal):Play()
-end)
-
--- Dragging
+-- Dragging MainFrame
 local dragging = false
 local dragInput, dragStart, startPos
 TitleBar.InputBegan:Connect(function(input)
@@ -143,38 +127,57 @@ UIS.InputChanged:Connect(function(input)
 	end
 end)
 
--- Thêm Spacer để đẩy Toggle xuống giữa TabsFrame
-local Spacer = Instance.new("Frame", TabsFrame)
-Spacer.Size = UDim2.new(1, 0, 0, 80)
-Spacer.BackgroundTransparency = 1
+-- Nút bật/tắt menu ngoài UI (phải trên, không ảnh, bo góc, kéo được)
+local MenuToggleButton = Instance.new("TextButton")
+MenuToggleButton.Parent = ScreenGui
+MenuToggleButton.Size = UDim2.new(0, 40, 0, 40)
+MenuToggleButton.Position = UDim2.new(1, -50, 0, 20)
+MenuToggleButton.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+MenuToggleButton.Text = "≡"
+MenuToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+MenuToggleButton.Font = Enum.Font.GothamBold
+MenuToggleButton.TextSize = 18
+Instance.new("UICorner", MenuToggleButton).CornerRadius = UDim.new(0, 8)
 
--- Thêm Toggle vào TabsFrame (giữa bên trái)
-local function CreateSidebarToggle(name, callback)
-	local Toggle = Instance.new("TextButton", TabsFrame)
-	Toggle.Size = UDim2.new(1, -10, 0, 30)
-	Toggle.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-	Toggle.TextColor3 = Color3.fromRGB(255, 255, 255)
-	Toggle.Font = Enum.Font.Gotham
-	Toggle.TextSize = 14
-	Toggle.Text = name .. ": OFF"
-	Instance.new("UICorner", Toggle).CornerRadius = UDim.new(0, 6)
-
-	local state = false
-	Toggle.MouseButton1Click:Connect(function()
-		state = not state
-		Toggle.Text = name .. ": " .. (state and "ON" or "OFF")
-		callback(state)
-	end)
-end
-
--- Thêm Toggle mẫu vào bên trái giữa
-CreateSidebarToggle("Auto Farm", function(state)
-	print("Auto Farm:", state)
+-- Click -> Đóng/mở menu
+MenuToggleButton.MouseButton1Click:Connect(function()
+	open = not open
+	local goal = {Position = open and openPos or closedPos}
+	TweenService:Create(MainFrame, tweenInfo, goal):Play()
 end)
 
--- Thêm Tabs + Button vào nội dung chính
+-- Kéo lên xuống
+local draggingButton = false
+local dragInputB, dragStartB, startPosB
+MenuToggleButton.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		draggingButton = true
+		dragStartB = input.Position
+		startPosB = MenuToggleButton.Position
+
+		input.Changed:Connect(function()
+			if input.UserInputState == Enum.UserInputState.End then
+				draggingButton = false
+			end
+		end)
+	end
+end)
+MenuToggleButton.InputChanged:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseMovement then
+		dragInputB = input
+	end
+end)
+UIS.InputChanged:Connect(function(input)
+	if input == dragInputB and draggingButton then
+		local delta = input.Position - dragStartB
+		local newY = startPosB.Y.Offset + delta.Y
+		MenuToggleButton.Position = UDim2.new(1, -50, 0, math.clamp(newY, 0, workspace.CurrentCamera.ViewportSize.Y - 50))
+	end
+end)
+
+-- Example Tab + Button
 local MainTab = CreateTab("Main")
-CreateButton(MainTab, "Test Button", function()
+CreateButton(MainTab, "Click Me!", function()
 	print("Clicked!")
 end)
 MainTab.Visible = true
