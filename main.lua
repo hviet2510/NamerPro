@@ -1,19 +1,25 @@
 local TweenService = game:GetService("TweenService")
 local UIS = game:GetService("UserInputService")
-local PlayerGui = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
--- ScreenGui
+-- Vị trí đóng/mở UI
+local open = true
+local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
+local openPos = UDim2.new(0.5, -250, 0.5, -150)
+local closedPos = UDim2.new(0.5, -250, 1.2, 0)
+
+-- ScreenGui + MainFrame
 local ScreenGui = Instance.new("ScreenGui", PlayerGui)
 ScreenGui.Name = "StackFlowUI"
 
--- Main Frame
 local MainFrame = Instance.new("Frame", ScreenGui)
 MainFrame.Size = UDim2.new(0, 500, 0, 300)
-MainFrame.Position = UDim2.new(0.5, -250, 0.5, -150)
+MainFrame.Position = openPos
 MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-MainFrame.BorderSizePixel = 0
-local UICorner = Instance.new("UICorner", MainFrame)
-UICorner.CornerRadius = UDim.new(0, 8)
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 8)
 
 -- TitleBar
 local TitleBar = Instance.new("Frame", MainFrame)
@@ -66,9 +72,7 @@ local function CreateTab(name)
 	Page.Position = UDim2.new(0, 5, 0, 5)
 	Page.BackgroundTransparency = 1
 	Page.Visible = false
-	local Layout = Instance.new("UIListLayout", Page)
-	Layout.Padding = UDim.new(0, 8)
-	Layout.HorizontalAlignment = Enum.HorizontalAlignment.Left
+	Instance.new("UIListLayout", Page).Padding = UDim.new(0, 8)
 
 	TabButton.MouseButton1Click:Connect(function()
 		for _, v in pairs(PagesFrame:GetChildren()) do
@@ -93,101 +97,113 @@ local function CreateButton(page, text, callback)
 	Button.MouseButton1Click:Connect(callback)
 end
 
--- Thêm tween info và vị trí đóng/mở
-local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
-local open = true
-local openPos = UDim2.new(0.5, -250, 0.5, -150)
-local closedPos = UDim2.new(0.5, -250, 0.5, -MainFrame.Size.Y.Offset - 20)
+local function CreateToggle(page, text, default, callback)
+	local state = default
+	local button = Instance.new("TextButton", page)
+	button.Size = UDim2.new(0, 200, 0, 30)
+	button.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+	button.Text = text .. ": " .. (state and "✅" or "❌")
+	button.TextColor3 = Color3.fromRGB(255, 255, 255)
+	button.Font = Enum.Font.Gotham
+	button.TextSize = 14
+	Instance.new("UICorner", button).CornerRadius = UDim.new(0, 6)
 
--- Nút bật/tắt menu ngoài UI (phải trên, không ảnh, bo góc, kéo được)
-local MenuToggleButton = Instance.new("TextButton")
-MenuToggleButton.Parent = ScreenGui
+	button.MouseButton1Click:Connect(function()
+		state = not state
+		button.Text = text .. ": " .. (state and "✅" or "❌")
+		callback(state)
+	end)
+end
+
+-- Nút bật/tắt menu ngoài UI (phải trên, kéo được)
+local MenuToggleButton = Instance.new("TextButton", ScreenGui)
 MenuToggleButton.Size = UDim2.new(0, 40, 0, 40)
 MenuToggleButton.Position = UDim2.new(1, -50, 0, 20)
 MenuToggleButton.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-MenuToggleButton.Text = "🌚"
+MenuToggleButton.Text = "☰"
 MenuToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 MenuToggleButton.Font = Enum.Font.GothamBold
 MenuToggleButton.TextSize = 18
 Instance.new("UICorner", MenuToggleButton).CornerRadius = UDim.new(0, 8)
 
--- Click -> Đóng/mở menu
 MenuToggleButton.MouseButton1Click:Connect(function()
 	open = not open
 	local goal = {Position = open and openPos or closedPos}
 	TweenService:Create(MainFrame, tweenInfo, goal):Play()
 end)
 
--- Kéo lên xuống nút
-local draggingButton = false
-local dragInputB, dragStartB, startPosB
-MenuToggleButton.InputBegan:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 then
-		draggingButton = true
-		dragStartB = input.Position
-		startPosB = MenuToggleButton.Position
+-- Kéo nút Toggle lên/xuống
+do
+	local dragging = false
+	local dragStart, startPos, dragInput
 
-		input.Changed:Connect(function()
-			if input.UserInputState == Enum.UserInputState.End then
-				draggingButton = false
-			end
-		end)
-	end
-end)
+	MenuToggleButton.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 then
+			dragging = true
+			dragStart = input.Position
+			startPos = MenuToggleButton.Position
+			input.Changed:Connect(function()
+				if input.UserInputState == Enum.UserInputState.End then
+					dragging = false
+				end
+			end)
+		end
+	end)
 
-MenuToggleButton.InputChanged:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseMovement then
-		dragInputB = input
-	end
-end)
+	MenuToggleButton.InputChanged:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseMovement then
+			dragInput = input
+		end
+	end)
 
-UIS.InputChanged:Connect(function(input)
-	if input == dragInputB and draggingButton then
-		local delta = input.Position - dragStartB
-		local newY = startPosB.Y.Offset + delta.Y
-		MenuToggleButton.Position = UDim2.new(1, -50, 0, math.clamp(newY, 0, workspace.CurrentCamera.ViewportSize.Y - 50))
-	end
-end)
+	UIS.InputChanged:Connect(function(input)
+		if input == dragInput and dragging then
+			local delta = input.Position - dragStart
+			local newY = startPos.Y.Offset + delta.Y
+			MenuToggleButton.Position = UDim2.new(1, -50, 0, math.clamp(newY, 0, workspace.CurrentCamera.ViewportSize.Y - 50))
+		end
+	end)
+end
 
--- Example Tab + Button
+-- Example Tabs + Buttons
 local MainTab = CreateTab("Main")
-CreateButton(MainTab, "Dí!", function()
-	print("Ngon Thí!")
+CreateButton(MainTab, "In Log", function()
+	print("Test log")
 end)
-local FlyTab = CreateTab("Fly")
+MainTab.Visible = true
 
+local FlyTab = CreateTab("Fly")
 local flying = false
 local bodyGyro, bodyVelocity
-local character = game.Players.LocalPlayer.Character or game.Players.LocalPlayer.CharacterAdded:Wait()
-local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
-
 local function setFly(state)
+	local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+	local hrp = character:WaitForChild("HumanoidRootPart")
 	flying = state
+
 	if flying then
 		bodyGyro = Instance.new("BodyGyro")
 		bodyGyro.P = 9e4
 		bodyGyro.maxTorque = Vector3.new(9e9, 9e9, 9e9)
-		bodyGyro.cframe = humanoidRootPart.CFrame
-		bodyGyro.Parent = humanoidRootPart
+		bodyGyro.cframe = hrp.CFrame
+		bodyGyro.Parent = hrp
 
 		bodyVelocity = Instance.new("BodyVelocity")
 		bodyVelocity.velocity = Vector3.new(0, 0, 0)
 		bodyVelocity.maxForce = Vector3.new(9e9, 9e9, 9e9)
-		bodyVelocity.Parent = humanoidRootPart
+		bodyVelocity.Parent = hrp
 
-		local connection = game:GetService("RunService").Heartbeat:Connect(function()
+		local connection
+		connection = RunService.Heartbeat:Connect(function()
 			if not flying then connection:Disconnect() return end
-
 			local camera = workspace.CurrentCamera
-			local moveDirection = Vector3.new()
-			if UIS:IsKeyDown(Enum.KeyCode.W) then moveDirection = moveDirection + camera.CFrame.LookVector end
-			if UIS:IsKeyDown(Enum.KeyCode.S) then moveDirection = moveDirection - camera.CFrame.LookVector end
-			if UIS:IsKeyDown(Enum.KeyCode.A) then moveDirection = moveDirection - camera.CFrame.RightVector end
-			if UIS:IsKeyDown(Enum.KeyCode.D) then moveDirection = moveDirection + camera.CFrame.RightVector end
-			if UIS:IsKeyDown(Enum.KeyCode.Space) then moveDirection = moveDirection + Vector3.new(0, 1, 0) end
-			if UIS:IsKeyDown(Enum.KeyCode.LeftControl) then moveDirection = moveDirection - Vector3.new(0, 1, 0) end
-
-			bodyVelocity.Velocity = moveDirection.Unit * 50
+			local move = Vector3.new()
+			if UIS:IsKeyDown(Enum.KeyCode.W) then move += camera.CFrame.LookVector end
+			if UIS:IsKeyDown(Enum.KeyCode.S) then move -= camera.CFrame.LookVector end
+			if UIS:IsKeyDown(Enum.KeyCode.A) then move -= camera.CFrame.RightVector end
+			if UIS:IsKeyDown(Enum.KeyCode.D) then move += camera.CFrame.RightVector end
+			if UIS:IsKeyDown(Enum.KeyCode.Space) then move += Vector3.new(0, 1, 0) end
+			if UIS:IsKeyDown(Enum.KeyCode.LeftControl) then move -= Vector3.new(0, 1, 0) end
+			bodyVelocity.Velocity = move.Unit * 50
 			bodyGyro.CFrame = camera.CFrame
 		end)
 	else
@@ -195,9 +211,4 @@ local function setFly(state)
 		if bodyVelocity then bodyVelocity:Destroy() end
 	end
 end
-
--- ✅ Thêm toggle Fly vào tab Fly
-CreateToggle(FlyTab, "Fly", false, function(state)
-	setFly(state)
-end)
-MainTab.Visible = true
+CreateToggle(FlyTab, "Fly", false, setFly)
