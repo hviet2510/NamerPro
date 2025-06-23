@@ -1,40 +1,48 @@
 local Rayfield = loadstring(game:HttpGet("https://raw.githubusercontent.com/shlexware/Rayfield/main/source"))()
 
 local Window = Rayfield:CreateWindow({
-    Name = "coolstuff",
-    LoadingTitle = "Loading UI...",
+    Name = "Admin - Map của Vieth1394",
+    LoadingTitle = "Loading...",
     ConfigurationSaving = {
         Enabled = true,
-        FolderName = "coolstuff-autocard"
+        FolderName = "Admin_Vieth1394"
     }
 })
 
-local MainTab = Window:CreateTab("Main", 4483362458)
-local SettingsSection = MainTab:CreateSection("Settings")
+local MainTab = Window:CreateTab("Admin Panel", 4483362458)
 
-local AutoSelect = MainTab:CreateToggle({
-    Name = "Auto Select Card",
-    CurrentValue = false,
-    Callback = function(Value)
-        print("Auto Select:", Value)
-        -- Thêm code auto ở đây
+MainTab:CreateButton({
+    Name = "Teleport đến Vị trí A",
+    Callback = function()
+        game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(0, 10, 0) -- Thay tọa độ vị trí bạn muốn
     end
 })
 
-local CardTab = Window:CreateTab("Card Priorities", 4483362458)
-local CardSection = CardTab:CreateSection("Set Priority")
+MainTab:CreateSlider({
+    Name = "Tốc độ chạy",
+    Range = {16, 200},
+    Increment = 1,
+    CurrentValue = 16,
+    Callback = function(Value)
+        game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = Value
+    end
+})
 
-local priorities = {}
-local cardList = {"Ambush", "Avarice I", "Avarice II", "Chaos Eater"}
+MainTab:CreateButton({
+    Name = "Godmode (Bất tử)",
+    Callback = function()
+        local hum = game.Players.LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+        if hum then hum.Health = math.huge end
+    end
+})
 
-for _, card in ipairs(cardList) do
-    CardTab:CreateInput({
-        Name = card,
-        PlaceholderText = "Priority Number",
-        RemoveTextAfterFocusLost = false,
-        Callback = function(text)
-            priorities[card] = tonumber(text) or 0
-            print(card .. " priority set to " .. priorities[card])
+MainTab:CreateButton({
+    Name = "Kick người khác (nếu có)",
+    Callback = function()
+        for _, player in pairs(game.Players:GetPlayers()) do
+            if player ~= game.Players.LocalPlayer then
+                player:Kick("Bạn đã bị admin map kick")
+            end
         end
-    })
-end
+    end
+})
