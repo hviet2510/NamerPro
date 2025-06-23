@@ -1,717 +1,188 @@
-local WindUI = require("./src/init")
+local TweenService = game:GetService("TweenService")
+local UIS = game:GetService("UserInputService")
+local PlayerGui = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+local CommF = game:GetService("ReplicatedStorage").Remotes.CommF_
+local plr = game.Players.LocalPlayer
+local chr = plr.Character or plr.CharacterAdded:Wait()
+local hrp = chr:WaitForChild("HumanoidRootPart")
 
--- Test
+-- UI Setup
+local ScreenGui = Instance.new("ScreenGui", PlayerGui)
+ScreenGui.Name = "CustomUI"
 
+local MainFrame = Instance.new("Frame", ScreenGui)
+MainFrame.Size = UDim2.new(0, 500, 0, 300)
+MainFrame.Position = UDim2.new(0.5, -250, 0.5, -150)
+MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 8)
 
+local TitleBar = Instance.new("Frame", MainFrame)
+TitleBar.Size = UDim2.new(1, 0, 0, 35)
+TitleBar.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+Instance.new("UICorner", TitleBar).CornerRadius = UDim.new(0, 8)
 
--- Set theme:
---WindUI:SetTheme("Light")
+local Title = Instance.new("TextLabel", TitleBar)
+Title.Size = UDim2.new(1, -10, 1, 0)
+Title.Position = UDim2.new(0, 5, 0, 0)
+Title.BackgroundTransparency = 1
+Title.Text = "Custom UI - Blox Fruits"
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 16
+Title.TextXAlignment = Enum.TextXAlignment.Left
 
---- EXAMPLE !!!
+local TabsFrame = Instance.new("Frame", MainFrame)
+TabsFrame.Size = UDim2.new(0, 120, 1, -35)
+TabsFrame.Position = UDim2.new(0, 0, 0, 35)
+TabsFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+Instance.new("UICorner", TabsFrame).CornerRadius = UDim.new(0, 8)
 
-function gradient(text, startColor, endColor)
-    local result = ""
-    local length = #text
+local TabLayout = Instance.new("UIListLayout", TabsFrame)
+TabLayout.Padding = UDim.new(0, 5)
+TabLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
-    for i = 1, length do
-        local t = (i - 1) / math.max(length - 1, 1)
-        local r = math.floor((startColor.R + (endColor.R - startColor.R) * t) * 255)
-        local g = math.floor((startColor.G + (endColor.G - startColor.G) * t) * 255)
-        local b = math.floor((startColor.B + (endColor.B - startColor.B) * t) * 255)
-
-        local char = text:sub(i, i)
-        result = result .. "<font color=\"rgb(" .. r ..", " .. g .. ", " .. b .. ")\">" .. char .. "</font>"
-    end
-
-    return result
-end
-
-local Confirmed = false
-
-WindUI:Popup({
-    Title = "Welcome! Popup Example",
-    Icon = "rbxassetid://129260712070622",
-    IconThemed = true,
-    Content = "This is an Example UI for the " .. gradient("WindUI", Color3.fromHex("#00FF87"), Color3.fromHex("#60EFFF")) .. " Lib",
-    Buttons = {
-        {
-            Title = "Cancel",
-            --Icon = "",
-            Callback = function() end,
-            Variant = "Secondary", -- Primary, Secondary, Tertiary
-        },
-        {
-            Title = "Continue",
-            Icon = "arrow-right",
-            Callback = function() Confirmed = true end,
-            Variant = "Primary", -- Primary, Secondary, Tertiary
-        }
-    }
-})
-
-
-repeat wait() until Confirmed
-
---
-
-local Window = WindUI:CreateWindow({
-    Title = "WindUI Library",
-    Icon = "rbxassetid://129260712070622",
-    IconThemed = true,
-    Author = "Example UI",
-    Folder = "CloudHub",
-    Size = UDim2.fromOffset(580, 460),
-    Transparent = true,
-    Theme = "Dark",
-    User = {
-        Enabled = true, -- <- or false
-        Callback = function() print("clicked") end, -- <- optional
-        Anonymous = true -- <- or true
-    },
-    SideBarWidth = 200,
-    -- HideSearchBar = true, -- hides searchbar
-    ScrollBarEnabled = true, -- enables scrollbar
-    -- Background = "rbxassetid://13511292247", -- rbxassetid only
-
-    -- remove it below if you don't want to use the key system in your script.
-    KeySystem = { -- <- keysystem enabled
-        Key = { "1234", "5678" },
-        Note = "Example Key System. \n\nThe Key is '1234' or '5678",
-        -- Thumbnail = {
-        --     Image = "rbxassetid://18220445082", -- rbxassetid only
-        --     Title = "Thumbnail"
-        -- },
-        URL = "link-to-linkvertise-or-discord-or-idk", -- remove this if the key is not obtained from the link.
-        SaveKey = true, -- saves key : optional
-    },
-})
-
-
--- Window:SetBackgroundImage("rbxassetid://13511292247")
--- Window:SetBackgroundImageTransparency(0.9)
-
-
--- TopBar Edit
-
--- Disable Topbar Buttons
--- Window:DisableTopbarButtons({
---     "Close", 
---     "Minimize", 
---     "Fullscreen",
--- })
-
--- Create Custom Topbar Buttons
---                        ↓ Name             ↓ Icon          ↓ Callback                           ↓ LayoutOrder
-Window:CreateTopbarButton("MyCustomButton1", "bird",         function() print("clicked 1!") end,  990)
-Window:CreateTopbarButton("MyCustomButton2", "droplet-off",  function() print("clicked 2!") end,  989)
-Window:CreateTopbarButton("MyCustomButton3", "battery-plus", function() Window:ToggleFullscreen() end, 988)
-
-
-Window:EditOpenButton({
-    Title = "Open Example UI",
-    Icon = "monitor",
-    CornerRadius = UDim.new(0,16),
-    StrokeThickness = 2,
-    Color = ColorSequence.new( -- gradient
-        Color3.fromHex("FF0F7B"), 
-        Color3.fromHex("F89B29")
-    ),
-    --Enabled = false,
-    Draggable = true,
-})
-
+local PagesFrame = Instance.new("Frame", MainFrame)
+PagesFrame.Size = UDim2.new(1, -130, 1, -40)
+PagesFrame.Position = UDim2.new(0, 130, 0, 40)
+PagesFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+Instance.new("UICorner", PagesFrame).CornerRadius = UDim.new(0, 8)
 
 local Tabs = {}
+local function CreateTab(name)
+	local TabButton = Instance.new("TextButton", TabsFrame)
+	TabButton.Size = UDim2.new(1, -10, 0, 30)
+	TabButton.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+	TabButton.Text = name
+	TabButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+	TabButton.Font = Enum.Font.Gotham
+	TabButton.TextSize = 14
+	Instance.new("UICorner", TabButton).CornerRadius = UDim.new(0, 6)
 
-do
-    Tabs.ElementsSection = Window:Section({
-        Title = "Elements",
-        Opened = true,
-    })
-    
-    Tabs.WindowSection = Window:Section({
-        Title = "Window Management",
-        Icon = "app-window-mac",
-        Opened = true,
-    })
-    
-    Tabs.OtherSection = Window:Section({
-        Title = "Other",
-        Opened = true,
-    })
+	local Page = Instance.new("Frame", PagesFrame)
+	Page.Size = UDim2.new(1, -10, 1, -10)
+	Page.Position = UDim2.new(0, 5, 0, 5)
+	Page.BackgroundTransparency = 1
+	Page.Visible = false
+	local Layout = Instance.new("UIListLayout", Page)
+	Layout.Padding = UDim.new(0, 8)
+	Layout.HorizontalAlignment = Enum.HorizontalAlignment.Left
 
-    
-    Tabs.ParagraphTab = Tabs.ElementsSection:Tab({ Title = "Paragraph", Icon = "type" })
-    Tabs.ButtonTab = Tabs.ElementsSection:Tab({ Title = "Button", Icon = "mouse-pointer-2", Desc = "Contains interactive buttons for various actions." })
-    Tabs.CodeTab = Tabs.ElementsSection:Tab({ Title = "Code", Icon = "code", Desc = "Displays and manages code snippets." })
-    Tabs.ColorPickerTab = Tabs.ElementsSection:Tab({ Title = "ColorPicker", Icon = "paintbrush", Desc = "Choose and customize colors easily." })
-    Tabs.DialogTab = Tabs.ElementsSection:Tab({ Title = "Dialog", Icon = "message-square", Desc = "Dialog lol" })
-    Tabs.NotificationTab = Tabs.ElementsSection:Tab({ Title = "Notification", Icon = "bell", Desc = "Configure and view notifications." })
-    Tabs.ToggleTab = Tabs.ElementsSection:Tab({ Title = "Toggle", Icon = "toggle-left", Desc = "Switch settings on and off." })
-    Tabs.SliderTab = Tabs.ElementsSection:Tab({ Title = "Slider", Icon = "sliders-horizontal", Desc = "Adjust values smoothly with sliders." })
-    Tabs.InputTab = Tabs.ElementsSection:Tab({ Title = "Input", Icon = "keyboard", Desc = "Accept text and numerical input." })
-    Tabs.KeybindTab = Tabs.ElementsSection:Tab({ Title = "Keybind", Icon = "keyboard-off" })
-    Tabs.DropdownTab = Tabs.ElementsSection:Tab({ Title = "Dropdown", Icon = "chevrons-up-down", Desc = "Select from multiple options." })
-    
-    Tabs.WindowTab = Tabs.WindowSection:Tab({ 
-        Title = "Window and File Configuration", 
-        Icon = "settings", 
-        Desc = "Manage window settings and file configurations.", 
-        ShowTabTitle = true 
-    })
-    Tabs.CreateThemeTab = Tabs.WindowSection:Tab({ Title = "Create Theme", Icon = "palette", Desc = "Design and apply custom themes." })
-    
-    Tabs.LongTab = Tabs.OtherSection:Tab({ 
-        Title = "Long and empty tab. with custom icon", 
-        Icon = "rbxassetid://129260712070622", 
-        IconThemed = true, 
-        Desc = "Long Description" 
-    })
-    Tabs.LockedTab = Tabs.OtherSection:Tab({ Title = "Locked Tab", Icon = "lock", Desc = "This tab is locked", Locked = true })
-    Tabs.TabWithoutIcon = Tabs.OtherSection:Tab({ Title = "Tab Without icon", ShowTabTitle = true })
-    Tabs.Tests = Tabs.OtherSection:Tab({ Title = "Tests", Icon = "https://raw.githubusercontent.com/Footagesus/WindUI/main/docs/ui.png", ShowTabTitle = true })
-    
-    
-    Tabs.LastSection = Window:Section({
-        Title = "Section without tabs",
-        --Opened = true,
-    })
-    
-    Tabs.ConfigTab = Window:Tab({ Title = "Config", Icon = "file-cog" })
+	TabButton.MouseButton1Click:Connect(function()
+		for _, v in pairs(PagesFrame:GetChildren()) do
+			if v:IsA("Frame") then v.Visible = false end
+		end
+		Page.Visible = true
+	end)
+
+	Tabs[name] = Page
+	return Page
 end
 
-
-
-Window:SelectTab(1)
-
-Tabs.ParagraphTab:Paragraph({
-    Title = "Paragraph with Image & Thumbnail",
-    Desc = "Test Paragraph",
-    Image = "https://play-lh.googleusercontent.com/7cIIPlWm4m7AGqVpEsIfyL-HW4cQla4ucXnfalMft1TMIYQIlf2vqgmthlZgbNAQoaQ",
-    ImageSize = 42, -- default 30
-    Thumbnail = "https://tr.rbxcdn.com/180DAY-59af3523ad8898216dbe1043788837bf/768/432/Image/Webp/noFilter",
-    ThumbnailSize = 120 -- Thumbnail height
-})
-Tabs.ParagraphTab:Paragraph({
-    Title = "Paragraph with Image & Thumbnail & Buttons",
-    Desc = "Test Paragraph",
-    Image = "https://play-lh.googleusercontent.com/7cIIPlWm4m7AGqVpEsIfyL-HW4cQla4ucXnfalMft1TMIYQIlf2vqgmthlZgbNAQoaQ",
-    ImageSize = 42, -- default 30
-    Thumbnail = "https://tr.rbxcdn.com/180DAY-59af3523ad8898216dbe1043788837bf/768/432/Image/Webp/noFilter",
-    ThumbnailSize = 120, -- Thumbnail height
-    Buttons = {
-        {
-            Title = "Button 1",
-            Variant = "Primary",
-            Callback = function() print("1 Button") end,
-            Icon = "bird",
-        },
-        {
-            Title = "Button 2",
-            Variant = "Primary",
-            Callback = function() print("2 Button") end,
-            Icon = "bird",
-        },
-        {
-            Title = "Button 3",
-            Variant = "Primary",
-            Callback = function() print("3 Button") end,
-            Icon = "bird",
-        },
-    }
-})
-
-Tabs.ParagraphTab:Divider()
-
-for _,i in next, { "Default", "Red", "Orange", "Green", "Blue", "Grey", "White" } do
-    Tabs.ParagraphTab:Paragraph({
-        Title = i,
-        Desc = "Paragraph with color",
-        Image = "bird",
-        Color = i ~= "Default" and i or nil,
-        Buttons = {
-            {
-                Title = "Button 1",
-                Variant = "Primary",
-                Callback = function() print("1 Button") end,
-                Icon = "bird",
-            },
-            {
-                Title = "Button 2",
-                Variant = "Primary",
-                Callback = function() print("2 Button") end,
-                Icon = "bird",
-            },
-            {
-                Title = "Button 3",
-                Variant = "Primary",
-                Callback = function() print("3 Button") end,
-                Icon = "bird",
-            },
-        }
-    })
+local function CreateToggle(page, text, callback)
+	local Button = Instance.new("TextButton", page)
+	Button.Size = UDim2.new(0, 200, 0, 30)
+	Button.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+	Button.Text = "[ OFF ] "..text
+	Button.TextColor3 = Color3.fromRGB(255, 255, 255)
+	Button.Font = Enum.Font.Gotham
+	Button.TextSize = 14
+	Instance.new("UICorner", Button).CornerRadius = UDim.new(0, 6)
+	local state = false
+	Button.MouseButton1Click:Connect(function()
+		state = not state
+		Button.Text = (state and "[ ON ] " or "[ OFF ] ")..text
+		callback(state)
+	end)
 end
 
+-- Tabs Setup
+local FarmTab = CreateTab("Farm Level")
+local SettingTab = CreateTab("Setting")
+local ConfigTab = CreateTab("Config")
+FarmTab.Visible = true
 
-
-Tabs.ButtonTab:Button({
-    Title = "Click Me",
-    Desc = "This is a simple button",
-    Callback = function() print("Button Clicked!") end
-})
-
-
-local destroybtn
-destroybtn = Tabs.ButtonTab:Button({
-    Title = "Click to destroy me!",
-    Callback = function() destroybtn:Destroy() end,
-})
-
-Tabs.ButtonTab:Button({
-    Title = "Submit",
-    Desc = "Click to submit",
-    Callback = function() print("Submitted!") end,
-})
-
-Tabs.ButtonTab:Button({
-    Title = "Set ToggleKey to 'F'",
-    Callback = function() Window:SetToggleKey(Enum.KeyCode.F) end,
-})
-
-Tabs.ButtonTab:Divider()
-
-
-Tabs.ButtonTab:Button({
-    Title = "Locked Button",
-    Desc = "This button is locked",
-    Locked = true,
-})
-
-
-Tabs.CodeTab:Code({
-    Title = "example-code.luau",
-    Code = [[-- Example Luau code to test syntax highlighting
-local Players = game:GetService("Players")
-local HttpService = game:GetService("HttpService")
-
-local function factorial(n)
-    if n <= 1 then
-        return 1
-    else
-        return n * factorial(n - 1)
-    end
-end
-
-local result = factorial(5)
-print("Factorial of 5 is:", result)
-
-local playerName = "Player"
-local score = 100
-
-if score >= 100 then
-    print(playerName .. " earned an achievement!")
-else
-    warn("Need more points.")
-end
-
--- Table with nested values
-local playerStats = {
-    name = "Player",
-    health = 100,
-    inventory = {"sword", "shield", "potion"}
+-- AUTO FARM SYSTEM
+local Mobs = {
+	{1,9,"BanditQuest1","Bandit",CFrame.new(1060,16,1547)},
+	{10,14,"BanditQuest2","Monkey",CFrame.new(-1610,35,145)},
+	{15,29,"BanditQuest2","Gorilla",CFrame.new(-1320,35,-500)},
+	{30,39,"BuggyQuest1","Pirate",CFrame.new(-1115,14,3890)},
+	{40,59,"BuggyQuest1","Brute",CFrame.new(-1140,14,4325)},
+	{60,74,"BuggyQuest2","Desert Bandit",CFrame.new(896,7,4381)},
+	{75,89,"BuggyQuest2","Desert Officer",CFrame.new(1572,10,4373)},
+	{90,99,"SnowQuest","Snow Bandit",CFrame.new(1389,87,-1297)},
+	{100,119,"SnowQuest","Snowman",CFrame.new(1229,87,-1442)},
+	{120,149,"MarineQuest","Chief Petty Officer",CFrame.new(-4739,20,4245)},
+	{150,174,"SkyQuest","Sky Bandit",CFrame.new(-4842,717,718)},
+	{175,189,"SkyQuest","Dark Master",CFrame.new(-5104,877,-262)},
+	{190,209,"PrisonerQuest","Prisoner",CFrame.new(5267,2,866)},
+	{210,249,"PrisonerQuest","Dangerous Prisoner",CFrame.new(5017,2,1073)},
+	{250,274,"ColosseumQuest","Toga Warrior",CFrame.new(-1820,45,-2748)},
+	{275,299,"ColosseumQuest","Gladiator",CFrame.new(-1292,55,-3597)},
+	{300,324,"MagmaQuest","Military Soldier",CFrame.new(-5310,80,8513)},
+	{325,374,"MagmaQuest","Military Spy",CFrame.new(-5424,78,8469)},
+	{375,399,"FishmanQuest","Fishman Warrior",CFrame.new(61122,19,1569)},
+	{400,449,"FishmanQuest","Fishman Commando",CFrame.new(61891,19,1474)},
+	{450,474,"SkyExp1Quest","God's Guard",CFrame.new(-4681,845,-1912)},
+	{475,524,"SkyExp1Quest","Shanda",CFrame.new(-4811,803,-2346)},
+	{525,549,"SkyExp2Quest","Royal Squad",CFrame.new(-7895,5636,-1412)},
+	{550,624,"SkyExp2Quest","Royal Soldier",CFrame.new(-7870,5636,-1746)},
+	{625,649,"FountainQuest","Galley Pirate",CFrame.new(5581,45,3990)},
+	{650,700,"FountainQuest","Galley Captain",CFrame.new(5780,45,4442)},
 }
 
-for i, item in ipairs(playerStats.inventory) do
-    print("Item in inventory:", item)
-end]],
-})
-
-Tabs.CodeTab:Code({
-    Code = [[print("WindUI on top!")]],
-})
-
-
-
-Tabs.ColorPickerTab:Colorpicker({
-    Title = "Pick a Color",
-    Default = Color3.fromRGB(255, 0, 0),
-    Callback = function(color) print("Selected color: " .. tostring(color)) end
-})
-
-Tabs.ColorPickerTab:Colorpicker({
-    Title = "Transparency Color",
-    Default = Color3.fromRGB(0, 0, 255),
-    Transparency = 0,
-    Callback = function(color) print("Background color: " .. tostring(color)) end
-})
-
-
-Tabs.DialogTab:Button({
-    Title = "Create Example Dialog",
-    Callback = function()
-        Window:Dialog({
-            Title = "Example Dialog",
-            Content = "Example Content. lalala",
-            Icon = "bird",
-            Buttons = {
-                {
-                    Title = "LOL!",
-                    Icon = "bird",
-                    Variant = "Tertiary",
-                    Callback = function()
-                        print("lol")
-                    end,
-                },
-                {
-                    Title = "Cool!",
-                    Icon = "bird",
-                    Variant = "Tertiary",
-                    Callback = function()
-                        print("Cool")
-                    end,
-                },
-                {
-                    Title = "Ok!",
-                    Icon = "bird",
-                    Variant = "Secondary",
-                    Callback = function()
-                        print("Ok")
-                    end,
-                },
-                {
-                    Title = "Awesome!",
-                    Icon = "bird",
-                    Variant = "Primary",
-                    Callback = function() 
-                        print("Awesome")
-                    end,
-                }
-            }
-        })
-    end,
-})
-
-Tabs.DialogTab:Button({
-    Title = "Create Example Dialog 2",
-    Callback = function()
-        Window:Dialog({
-            Title = "Example Dialog 2",
-            Content = "Example Content. lalala",
-            Icon = "rbxassetid://129260712070622",
-            Buttons = {
-                {
-                    Title = "Ok!",
-                    Variant = "Primary",
-                    Callback = function()
-                        print("ok")
-                    end,
-                },
-            }
-        })
-    end,
-})
-
-
-Tabs.NotificationTab:Button({
-    Title = "Click to get Notified",
-    Callback = function() 
-        WindUI:Notify({
-            Title = "Notification Example 1",
-            Content = "Content",
-            Duration = 5,
-        })
-    end
-})
-
-Tabs.NotificationTab:Button({
-    Title = "Notification with icon",
-    Callback = function() 
-        WindUI:Notify({
-            Title = "Notification Example 2",
-            Content = "Content",
-            Icon = "droplet-off",
-            Duration = 5,
-        })
-    end
-})
-
-Tabs.NotificationTab:Button({
-    Title = "Notification with custom icon",
-    Callback = function() 
-        WindUI:Notify({
-            Title = "Notification Example 2",
-            Content = "Content",
-            Icon = "rbxassetid://129260712070622",
-            IconThemed = true, -- automatic color icon to theme 
-            Duration = 5,
-        })
-    end
-})
-
-Tabs.NotificationTab:Button({
-    Title = "Notification with BackgroundImage",
-    Callback = function() 
-        WindUI:Notify({
-            Title = "Notification Example 3",
-            Content = "with BackgroundImage",
-            Icon = "image",
-            Duration = 5,
-            Background = "rbxassetid://13511292247"
-        })
-    end
-})
-
-
-Tabs.ToggleTab:Toggle({
-    Title = "Enable Feature",
-    --Image = "bird",
-    Value = true,
-    Callback = function(state) print("Feature enabled: " .. tostring(state)) end
-})
-
-Tabs.ToggleTab:Toggle({
-    Title = "Activate Mode",
-    Value = false,
-    Callback = function(state) print("Mode activated: " .. tostring(state)) end
-})
-Tabs.ToggleTab:Toggle({
-    Title = "Toggle with icon",
-    Icon = "check",
-    Value = false,
-    Callback = function(state) print("Toggle with icon activated: " .. tostring(state)) end
-})
-
-Tabs.ToggleTab:Toggle({
-    Title = "New Toggle Type 'Checkbox'",
-    Type = "Checkbox",
-    Value = false,
-    Callback = function(state) print("'Checkbox' Toggle activated: " .. tostring(state)) end
-})
-Tabs.ToggleTab:Toggle({
-    Title = "New Toggle Type 'Checkbox' with custom icon",
-    Icon = "bird",
-    Type = "Checkbox",
-    Value = false,
-    Callback = function(state) print("'Checkbox' Toggle with icon activated: " .. tostring(state)) end
-})
-
-
-Tabs.SliderTab:Slider({
-    Title = "Volume Slider",
-    Value = {
-        Min = 0,
-        Max = 100,
-        Default = 50,
-    },
-    Callback = function(value) print("Volume set to: " .. value) end
-})
-
-Tabs.SliderTab:Slider({
-    Title = "Brightness Slider",
-    Value = {
-        Min = 1,
-        Max = 100,
-        Default = 75,
-    },
-    Callback = function(value) print("Brightness set to: " .. value) end
-})
-
-Tabs.SliderTab:Slider({
-    Title = "Float Slider",
-    Step = 0.1,
-    Value = {
-        Min = 0,
-        Max = 2.5,
-        Default = 1.5,
-    },
-    Callback = function(value) print("Brightness set to: " .. value) end
-})
-
-
-Tabs.InputTab:Input({
-    Title = "Username",
-    Value = "Guest",
-    Placeholder = "Enter your username",
-    Callback = function(input) print("Username: " .. input) end
-})
-
-Tabs.InputTab:Input({
-    Title = "Password",
-    Value = "",
-    Placeholder = "Enter your password",
-    Callback = function(input) print("Password entered.") end
-})
-
-
-Tabs.InputTab:Input({
-    Title = "Input with icon",
-    Value = "pisun",
-    InputIcon = "bird",
-    Placeholder = "Enter pisun",
-    Callback = function(input) print("pisun entered.") end
-})
-
-
-Tabs.InputTab:Input({
-    Title = "Comment",
-    Value = "",
-    Type = "Textarea", -- or Input
-    Placeholder = "Leave a comment",
-    Callback = function(input) 
-        print("Comment entered: " .. input)
-    end
-})
-
-Tabs.InputTab:Input({
-    Title = "Comment with icon",
-    Desc = "hmmmm",
-    Value = "pisun",
-    InputIcon = "bird",
-    Type = "Textarea", -- or Input
-    Placeholder = "Leave a pisun",
-    Callback = function(input) 
-        print("Pisun entered: " .. input)
-    end
-})
-
-
-Tabs.KeybindTab:Keybind({
-    Title = "Keybind Example",
-    Desc = "Keybind to open ui",
-    Value = "G",
-    Callback = function(v)
-        Window:SetToggleKey(Enum.KeyCode[v])
-    end
-})
-
-
-Tabs.DropdownTab:Dropdown({
-    Title = "Select an Option",
-    Values = { "Option 1", "Option 2", "Option 3" },
-    Value = "Option 1",
-    Callback = function(option) print("Selected: " .. option) end
-})
-
-Tabs.DropdownTab:Dropdown({
-    Title = "Choose a Category (Multi)",
-    Values = { "Category A", "Category B", "Category C" },
-    Value = { "Category A" },
-    Multi = true,
-    AllowNone = true,
-    Callback = function(option) 
-        print("Categories selected: " .. game:GetService("HttpService"):JSONEncode(option)) 
-    end
-})
-Tabs.DropdownTab:Dropdown({
-    Title = "Big Dropdown",
-    Values = { "Lllllllloooooooonnnnnggggggggg Tab", 
-               "Hi",
-               "Hi",
-               "Hi",
-               "Hi",
-               "Hi",
-               "Hi",
-               "Hi",
-               "Hi",
-               "Hi",
-             },
-    --Value = { "" },
-    Multi = true,
-    AllowNone = true,
-    Callback = function(option) 
-        print("Pisun selected: " .. game:GetService("HttpService"):JSONEncode(option)) 
-    end
-})
-
-
-
--- Configuration
--- Optional
-
-
-local HttpService = game:GetService("HttpService")
-
-local folderPath = "WindUI"
-makefolder(folderPath)
-
-local function SaveFile(fileName, data)
-    local filePath = folderPath .. "/" .. fileName .. ".json"
-    local jsonData = HttpService:JSONEncode(data)
-    writefile(filePath, jsonData)
+local function GetMob()
+	local lvl = plr.Data.Level.Value
+	for _,m in ipairs(Mobs) do
+		if lvl >= m[1] and lvl <= m[2] then return unpack(m) end
+	end
 end
 
-local function LoadFile(fileName)
-    local filePath = folderPath .. "/" .. fileName .. ".json"
-    if isfile(filePath) then
-        local jsonData = readfile(filePath)
-        return HttpService:JSONDecode(jsonData)
-    end
+local function EquipMelee()
+	for _,v in ipairs(plr.Backpack:GetChildren()) do
+		if v:IsA("Tool") then plr.Character.Humanoid:EquipTool(v) return end
+	end
 end
 
-local function ListFiles()
-    local files = {}
-    for _, file in ipairs(listfiles(folderPath)) do
-        local fileName = file:match("([^/]+)%.json$")
-        if fileName then
-            table.insert(files, fileName)
-        end
-    end
-    return files
+local function Stat()
+	local unspent = plr.Data.Stats.Melee.Points.Value
+	if unspent > 0 then CommF:InvokeServer("AddPoint","Melee",unspent) end
 end
 
-Tabs.WindowTab:Section({ Title = "Window", Icon = "app-window-mac" })
-
-local themeValues = {}
-for name, _ in pairs(WindUI:GetThemes()) do
-    table.insert(themeValues, name)
+local function Attack(mob)
+	repeat task.wait()
+		if not mob or not mob:FindFirstChild("HumanoidRootPart") then break end
+		hrp.CFrame = mob.HumanoidRootPart.CFrame * CFrame.new(0,20,0)
+		EquipMelee()
+		for _,tool in ipairs(plr.Backpack:GetChildren()) do
+			if tool:IsA("Tool") then
+				plr.Character.Humanoid:EquipTool(tool)
+				tool:Activate()
+			end
+		end
+	until not mob or mob.Humanoid.Health <= 0
 end
 
-local themeDropdown = Tabs.WindowTab:Dropdown({
-    Title = "Select Theme",
-    Multi = false,
-    AllowNone = false,
-    Value = nil,
-    Values = themeValues,
-    Callback = function(theme)
-        WindUI:SetTheme(theme)
-    end
-})
-themeDropdown:Select(WindUI:GetCurrentTheme())
-
-local ToggleTransparency = Tabs.WindowTab:Toggle({
-    Title = "Toggle Window Transparency",
-    Callback = function(e)
-        Window:ToggleTransparency(e)
-    end,
-    Value = WindUI:GetTransparency()
-})
-
-Tabs.WindowTab:Section({ Title = "Save" })
-
-local fileNameInput = ""
-Tabs.WindowTab:Input({
-    Title = "Write File Name",
-    PlaceholderText = "Enter file name",
-    Callback = function(text)
-        fileNameInput = text
-    end
-})
-
-Tabs.WindowTab:Button({
-    Title = "Save File",
-    Callback = function()
-        if fileNameInput ~= "" then
-            SaveFile(fileNameInput, { Transparent = WindUI:GetTransparency(), Theme = WindUI:GetCurrentTheme() })
-        end
-    end
-})
-
-Tabs.WindowTab:Section({ Title = "Load" })
-
-local filesDropdown
-local files = ListFiles()
-
-filesDropdown = Tabs.WindowTab:Dropdown({
-    Title = "Select File",
-    Multi = false,
-    AllowNon
+local autofarm = false
+CreateToggle(FarmTab,"Auto Farm Level",function(bool)
+	autofarm = bool
+	if bool then
+		task.spawn(function()
+			while autofarm and task.wait() do
+				pcall(function()
+					local min,max,quest,mobname,pos = GetMob()
+					if not quest then return end
+					CommF:InvokeServer("StartQuest",quest,1)
+					hrp.CFrame = pos + Vector3.new(0,20,0)
+					EquipMelee()
+					for _,mob in ipairs(workspace.Enemies:GetChildren()) do
+						if mob.Name == mobname and mob:FindFirstChild("HumanoidRootPart") and mob.Humanoid.Health > 0 then
+							Attack(mob)
+						end
+					end
+					Stat()
+				end)
+			end
+		end)
+	end
+end)
