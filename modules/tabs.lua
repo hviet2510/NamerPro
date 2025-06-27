@@ -1,8 +1,12 @@
 local Tabs = {}
 
 function Tabs.Create(window, name, imageId)
-    local tab = window.newTab(name, imageId)
-    return tab
+    if window and window.newTab then
+        return window.newTab(name, imageId)
+    else
+        warn("[Tabs] Window không hợp lệ hoặc thiếu newTab")
+        return nil
+    end
 end
 
 return Tabs
