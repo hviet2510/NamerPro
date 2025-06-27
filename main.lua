@@ -1,43 +1,72 @@
--- Tải DrRay UI
-local DrRayLibrary = loadstring(game:HttpGet("https://raw.githubusercontent.com/hviet2510/NamerPro/main/DrRay-ui.lua"))()
+-- Load DrRay library
+local DrRayLibrary = loadstring(game:HttpGet("https://raw.githubusercontent.com/AZYsGithub/DrRay-UI-Library/main/DrRay.lua"))()
 
--- Tải AutoFarm & EnemyList
+-- Load modules
 local AutoFarm = loadstring(game:HttpGet("https://raw.githubusercontent.com/hviet2510/NamerPro/main/modules/autofarm.lua"))()
 local EnemyList = loadstring(game:HttpGet("https://raw.githubusercontent.com/hviet2510/NamerPro/main/modules/enemylist.lua"))()
 
--- Tạo Window
+-- Create window
 local window = DrRayLibrary:Load("NamerPro UI", "Default")
 
--- Tạo Tab Farm Level
-local farmTab = window:newTab("Farm Level", "ImageIdFarm")
+-- Tab: Farm Level
+local farmTab = DrRayLibrary.newTab("Farm Level", "ImageIdFarm")
 
--- Toggle: Auto Farm
-farmTab.newToggle("Auto Farm", "Bật/Tắt Auto Farm Level", false, function(state)
-    if AutoFarm and AutoFarm.Toggle then
-        AutoFarm.Toggle(state, EnemyList)
-        print("[NamerPro] Auto Farm: " .. (state and "BẬT" or "TẮT"))
+farmTab.newLabel("Farm Level Functions")
+
+farmTab.newToggle("Auto Farm", "Bật/Tắt Auto Farm", false, function(state)
+    if state then
+        local target = EnemyList.GetByLevel(game.Players.LocalPlayer.Level.Value)
+        if target then
+            print("[NamerPro] Auto Farm target: " .. target.Name)
+            AutoFarm.Start(target)
+        else
+            warn("[NamerPro] Không tìm thấy quái phù hợp level!")
+        end
     else
-        warn("[NamerPro] ❌ AutoFarm module chưa sẵn sàng!")
+        AutoFarm.Stop()
+        print("[NamerPro] Auto Farm: TẮT")
     end
 end)
 
--- Input: Chỉnh tốc độ attack (delay)
-farmTab.newInput("Attack Delay", "Nhập delay (giây)", function(text)
+farmTab.newInput("Attack Delay", "Nhập delay tấn công (giây)", function(text)
     local delay = tonumber(text)
-    if delay and AutoFarm and AutoFarm.SetDelay then
+    if delay then
         AutoFarm.SetDelay(delay)
-        print("[NamerPro] Đặt delay tấn công: " .. delay .. " giây")
+        print("[NamerPro] Delay attack set to: " .. delay)
     else
-        warn("[NamerPro] ❌ Giá trị delay không hợp lệ hoặc AutoFarm chưa sẵn sàng!")
+        warn("[NamerPro] Giá trị delay không hợp lệ!")
     end
 end)
 
--- Dropdown: Chọn Farm Mode
-farmTab.newDropdown("Farm Mode", "Chọn chế độ farm", {"Bình Thường", "Nhanh", "An Toàn"}, function(mode)
-    if AutoFarm and AutoFarm.SetMode then
-        AutoFarm.SetMode(mode)
-        print("[NamerPro] Đã chọn chế độ: " .. mode)
+farmTab.newDropdown("Farm Mode", "Chọn mode farm", {"Bình Thường", "Nhanh", "An Toàn"}, function(selected)
+    AutoFarm.SetMode(selected)
+    print("[NamerPro] Đã chọn farm mode: " .. selected)
+end)
+
+-- Tab: Settings
+local settingsTab = DrRayLibrary.newTab("Settings", "ImageIdSettings")
+
+settingsTab.newInput("Tween Speed", "Nhập tốc độ Tween", function(text)
+    local speed = tonumber(text)
+    if speed then
+        AutoFarm.SetTweenSpeed(speed)
+        print("[NamerPro] Tween speed set to: " .. speed)
     else
-        warn("[NamerPro] ❌ AutoFarm chưa sẵn sàng hoặc thiếu hàm SetMode!")
+        warn("[NamerPro] Giá trị tween speed không hợp lệ!")
     end
+end)
+
+settingsTab.newInput("Attack Range", "Nhập khoảng cách tấn công", function(text)
+    local range = tonumber(text)
+    if range then
+        AutoFarm.SetRange(range)
+        print("[NamerPro] Attack range set to: " .. range)
+    else
+        warn("[NamerPro] Giá trị range không hợp lệ!")
+    end
+end)
+
+settingsTab.newToggle("Auto Quest", "Bật/Tắt tự nhận quest", false, function(state)
+    AutoFarm.SetAutoQuest(state)
+    print("[NamerPro] Auto Quest: " .. (state and "BẬT" or "TẮT"))
 end)
