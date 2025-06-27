@@ -1,58 +1,45 @@
--- Load UI và module
+-- Load DrRay UI
 local DrRayLibrary = loadstring(game:HttpGet("https://raw.githubusercontent.com/hviet2510/NamerPro/main/DrRay-ui.lua"))()
+
+-- Load modules
 local AutoFarm = loadstring(game:HttpGet("https://raw.githubusercontent.com/hviet2510/NamerPro/main/modules/autofarm.lua"))()
 local EnemyList = loadstring(game:HttpGet("https://raw.githubusercontent.com/hviet2510/NamerPro/main/modules/enemylist.lua"))()
 
 -- Tạo window
 local window = DrRayLibrary:Load("NamerPro UI", "Default")
 
--- Tab Farm Level
+-- Tạo Tab Farm Level
 local farmTab = window:newTab("Farm Level", "ImageIdFarm")
 
-farmTab.newToggle("Auto Farm Toggle", "Bật/Tắt Auto Farm", false, function(state)
+-- Toggle: Auto Farm
+farmTab.newToggle("Auto Farm", "Bật/Tắt auto farm", false, function(state)
     AutoFarm.Toggle(state, EnemyList)
-    print("[NamerPro] Auto Farm: " .. (state and "BẬT" or "TẮT"))
 end)
 
-farmTab.newInput("Khoảng cách tấn công", "Nhập khoảng cách (vd: 10)", function(text)
-    local num = tonumber(text)
-    if num then
-        AutoFarm.SetAttackDistance(num)
-        print("[NamerPro] Khoảng cách tấn công: " .. num)
+-- Input: Delay tấn công
+farmTab.newInput("Delay (giây)", "Nhập delay tấn công (VD: 1)", function(text)
+    local n = tonumber(text)
+    if n then
+        AutoFarm.SetDelay(n)
+        print("[NamerPro] Delay set: " .. n)
     else
-        warn("[NamerPro] Giá trị khoảng cách không hợp lệ!")
+        warn("[NamerPro] Delay không hợp lệ!")
     end
 end)
 
-farmTab.newInput("Delay đòn đánh", "Nhập delay giữa đòn (giây)", function(text)
-    local num = tonumber(text)
-    if num then
-        AutoFarm.SetDelay(num)
-        print("[NamerPro] Đặt delay đòn: " .. num)
+-- Input: Khoảng cách tấn công
+farmTab.newInput("Khoảng cách", "Khoảng cách tấn công (VD: 50)", function(text)
+    local n = tonumber(text)
+    if n then
+        AutoFarm.SetDistance(n)
+        print("[NamerPro] Khoảng cách set: " .. n)
     else
-        warn("[NamerPro] Giá trị delay không hợp lệ!")
+        warn("[NamerPro] Khoảng cách không hợp lệ!")
     end
 end)
 
-farmTab.newDropdown("Farm Mode", "Chọn chế độ farm", {"Bình Thường", "Nhanh", "An Toàn"}, function(mode)
-    AutoFarm.SetMode(mode)
-    print("[NamerPro] Chế độ farm: " .. mode)
-end)
-
--- Tab Settings
-local settingsTab = window:newTab("Settings", "ImageIdSettings")
-
-settingsTab.newInput("Tốc độ Tween", "Nhập tốc độ tween di chuyển", function(text)
-    local num = tonumber(text)
-    if num then
-        AutoFarm.SetTweenSpeed(num)
-        print("[NamerPro] Tốc độ tween: " .. num)
-    else
-        warn("[NamerPro] Giá trị tween không hợp lệ!")
-    end
-end)
-
-settingsTab.newInput("Tên NPC nhận Quest", "Nhập tên NPC", function(text)
-    AutoFarm.SetQuestNPC(text)
-    print("[NamerPro] NPC Quest: " .. text)
+-- Dropdown: Farm Mode
+farmTab.newDropdown("Farm Mode", "Chọn mode farm", {"Bình Thường", "Nhanh", "An Toàn"}, function(selected)
+    AutoFarm.SetMode(selected)
+    print("[NamerPro] Mode farm: " .. selected)
 end)
