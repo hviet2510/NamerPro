@@ -1,0 +1,32 @@
+local Tabs = {}
+
+function Tabs.CreateTab(parent, name)
+    local tabButton = Instance.new("TextButton")
+    tabButton.Name = name .. "_Tab"
+    tabButton.Parent = parent
+    tabButton.Size = UDim2.new(0, 120, 0, 35)
+    tabButton.Text = name
+    tabButton.Font = Enum.Font.Gotham
+    tabButton.TextSize = 14
+    tabButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    tabButton.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+
+    -- Bo góc + viền
+    local corner = Instance.new("UICorner", tabButton)
+    corner.CornerRadius = UDim.new(0, 8)
+    local stroke = Instance.new("UIStroke", tabButton)
+    stroke.Color = Color3.fromRGB(60, 60, 60)
+    stroke.Thickness = 1.5
+
+    -- Hover effect
+    tabButton.MouseEnter:Connect(function()
+        tabButton.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+    end)
+    tabButton.MouseLeave:Connect(function()
+        tabButton.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    end)
+
+    return tabButton
+end
+
+return Tabs
