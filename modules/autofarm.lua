@@ -1,90 +1,99 @@
-local TweenService = game:GetService("TweenService")
-local Players = game:GetService("Players")
-local player = Players.LocalPlayer
 local AutoFarm = {}
-AutoFarm.Enabled = false
-AutoFarm.Delay = 1
-AutoFarm.ToolName = nil
+local farming = false
+local farmRange = 10
+local toolName = nil
+local currentMob = nil
+local TweenService = game:GetService("TweenService")
 
-function AutoFarm.TweenTo(pos)
-    local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-    if not hrp then return end
-    local distance = (hrp.Position - pos).Magnitude
-    local tweenTime = distance / 100
-    local tween = TweenService:Create(hrp, TweenInfo.new(tweenTime, Enum.EasingStyle.Linear), {Position = pos})
+function AutoFarm.SetRange(range)
+    farmRange = range
+    print("[NamerPro] Khoảng cách tấn công:", farmRange)
+end
+
+function AutoFarm.SetTool(name)
+    toolName = name
+    print("[NamerPro] Đặt tool:", toolName)
+end
+
+function AutoFarm.Stop()
+    farming = false
+    currentMob = nil
+    print("[NamerPro] Đã dừng Auto Farm")
+end
+
+local function tweenTo(targetPos, speed)
+    if not targetPos or typeof(targetPos) ~= "Vector3" then return end
+    local player = game.Players.LocalPlayer
+    local char = player.Character
+    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+    local distance = (char.HumanoidRootPart.Position - targetPos).Magnitude
+    local tweenTime = distance / speed
+    local tween = TweenService:Create(char.HumanoidRootPart, TweenInfo.new(tweenTime, Enum.EasingStyle.Linear), {Position = targetPos})
     tween:Play()
     tween.Completed:Wait()
 end
 
-function AutoFarm.GetTool()
-    local backpack = player:WaitForChild("Backpack")
-    local char = player.Character
-    if AutoFarm.ToolName then
-        -- Ưu tiên tool đã chọn
-        local tool = backpack:FindFirstChild(AutoFarm.ToolName) or (char and char:FindFirstChild(AutoFarm.ToolName))
+local function equipTool(char)
+    if toolName and char and not char:FindFirstChild(toolName) then
+        local tool = game.Players.LocalPlayer.Backpack:FindFirstChild(toolName)
         if tool then
-            if tool.Parent == backpack then
-                tool.Parent = char
-            end
-            return tool
-        end
-    end
-    -- Nếu không có tool chọn, lấy tool bất kỳ
-    for _, tool in pairs(backpack:GetChildren()) do
-        if tool:IsA("Tool") then
             tool.Parent = char
-            return tool
+            task.wait(0.05)
+            print("[NamerPro] Auto equip tool:", toolName)
+        else
+            warn("[NamerPro] Không tìm thấy tool:", toolName)
         end
     end
-    return nil
 end
 
-function AutoFarm.Start(enemyList)
-    AutoFarm.Enabled = true
-    task.spawn(function()
-        while AutoFarm.Enabled do
-            local level = player.Data.Level.Value
-            local enemyInfo = enemyList.GetEnemyByLevel(level)
-            if enemyInfo then
-                AutoFarm.TweenTo(enemyInfo.Position + Vector3.new(0, 5, 0))
-                local target
-                for _, mob in pairs(workspace.Enemies:GetChildren()) do
-                    if mob.Name == enemyInfo.Name and mob:FindFirstChild("Humanoid") and mob.Humanoid.Health > 0 then
-                        target = mob
+function AutoFarm.Toggle(state, enemyList)
+    if state then
+        if farming then return end
+        farming = true
+        print("[NamerPro] Auto Farm: BẬT")
+        task.spawn(function()
+            while farming do
+                local player = game.Players.LocalPlayer
+                local char = player.Character
+                if not char or not char:FindFirstChild("HumanoidRootPart") then task.wait(0.1) continue end
+
+                local level = player:FindFirstChild("leaderstats") and player.leaderstats:FindFirstChild("Level") and player.leaderstats.Level.Value
+                if type(level) ~= "number" then task.wait(0.1) continue end
+
+                local enemyInfo = enemyList.GetEnemyByLevel(level)
+                if not enemyInfo then task.wait(0.1) continue end
+
+                local mobFound = nil
+                for _, mob in pairs(workspace:GetChildren()) do
+                    if mob.Name == enemyInfo.Name and mob:FindFirstChild("HumanoidRootPart") and mob:FindFirstChild("Humanoid") and mob.Humanoid.Health > 0 then
+                        mobFound = mob
                         break
                     end
                 end
 
-                if target then
-                    local tool = AutoFarm.GetTool()
-                    if not tool then warn("[NamerPro] Không tìm thấy tool!") break end
+                if mobFound and mobFound ~= currentMob then
+                    currentMob = mobFound
+                    local targetPos = mobFound.HumanoidRootPart.Position + Vector3.new(0, farmRange, 0)
+                    tweenTo(targetPos, 100)
+                    equipTool(char)
 
-                    repeat
-                        if tool:FindFirstChild("RemoteEvent") then
-                            tool.RemoteEvent:FireServer()
-                        else
+                    while farming and currentMob and currentMob.Parent and currentMob:FindFirstChild("Humanoid") and currentMob.Humanoid.Health > 0 do
+                        local tool = char:FindFirstChild(toolName)
+                        if tool and tool:IsA("Tool") then
                             tool:Activate()
                         end
-                        task.wait(AutoFarm.Delay)
-                    until not target.Parent or target.Humanoid.Health <= 0 or not AutoFarm.Enabled
+                        task.wait(0.1)
+                    end
+
+                    currentMob = nil
+                else
+                    task.wait(0.1)
                 end
             end
-            task.wait(0.5)
-        end
-    end)
-end
-
-function AutoFarm.Toggle(state)
-    AutoFarm.Enabled = state
-end
-
-function AutoFarm.SetDelay(sec)
-    AutoFarm.Delay = sec
-end
-
-function AutoFarm.SetTool(name)
-    AutoFarm.ToolName = name
-    print("[NamerPro] Đã chọn tool: "..tostring(name))
+        end)
+    else
+        AutoFarm.Stop()
+    end
 end
 
 return AutoFarm
