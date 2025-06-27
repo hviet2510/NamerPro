@@ -1,12 +1,24 @@
--- Tải DrRay UI
-local DrRayLibrary = loadstring(game:HttpGet("https://raw.githubusercontent.com/hviet2510/NamerPro/main/DrRay-ui.lua"))()
+local function safeLoad(name, url)
+    print("[Main] 🔄 Đang tải module: "..name)
+    local ok, result = pcall(function()
+        return loadstring(game:HttpGet(url))()
+    end)
+    if ok and result then
+        print("[Main] ✅ Đã tải: "..name)
+        return result
+    else
+        warn("[Main] ❌ LỖI tải module: "..name.." -> "..tostring(result))
+        return nil
+    end
+end
 
--- Tải các module
-local TabsModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/hviet2510/NamerPro/main/modules/tabs.lua"))()
-local ButtonsModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/hviet2510/NamerPro/main/modules/buttons.lua"))()
-local AutoFarm = loadstring(game:HttpGet("https://raw.githubusercontent.com/hviet2510/NamerPro/main/modules/autofarm.lua"))()
-local EnemyList = loadstring(game:HttpGet("https://raw.githubusercontent.com/hviet2510/NamerPro/main/modules/enemylist.lua"))()
+local DrRayLibrary = safeLoad("DrRay-ui", "https://raw.githubusercontent.com/hviet2510/NamerPro/main/DrRay-ui.lua")
+local TabsModule = safeLoad("Tabs", "https://raw.githubusercontent.com/hviet2510/NamerPro/main/modules/tabs.lua")
+local ButtonsModule = safeLoad("Buttons", "https://raw.githubusercontent.com/hviet2510/NamerPro/main/modules/buttons.lua")
+local AutoFarm = safeLoad("AutoFarm", "https://raw.githubusercontent.com/hviet2510/NamerPro/main/modules/autofarm.lua")
+local EnemyList = safeLoad("EnemyList", "https://raw.githubusercontent.com/hviet2510/NamerPro/main/modules/enemylist.lua")
 
+if not DrRayLibrary then return warn("❌ Không thể tiếp tục: UI library lỗi!") end
 -- Tạo window
 local window = DrRayLibrary:Load("NamerPro UI", "Default")
 
