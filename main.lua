@@ -1,14 +1,23 @@
+-- Tải DrRay UI
 local DrRayLibrary = loadstring(game:HttpGet("https://raw.githubusercontent.com/hviet2510/NamerPro/main/DrRay-ui.lua"))()
-local Tabs = loadstring(game:HttpGet("https://raw.githubusercontent.com/hviet2510/NamerPro/main/modules/tabs.lua"))()
-local Buttons = loadstring(game:HttpGet("https://raw.githubusercontent.com/hviet2510/NamerPro/main/modules/buttons.lua"))()
+
+-- Tải các module
+local TabsModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/hviet2510/NamerPro/main/modules/tabs.lua"))()
+local ButtonsModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/hviet2510/NamerPro/main/modules/buttons.lua"))()
+local AutoFarm = loadstring(game:HttpGet("https://raw.githubusercontent.com/hviet2510/NamerPro/main/modules/autofarm.lua"))()
+local EnemyList = loadstring(game:HttpGet("https://raw.githubusercontent.com/hviet2510/NamerPro/main/modules/enemylist.lua"))()
 
 -- Tạo window
 local window = DrRayLibrary:Load("NamerPro UI", "Default")
 
 -- Tạo tab Farm Level
-local farmTab = Tabs.Create(window, "Farm Level", "ImageIdFarm")
+local farmTab = TabsModule.Create(window, "Farm Level", "ImageIdFarm")
 
--- Tạo button Start Farm
-Buttons.Create(farmTab, "Start Farm", function()
-    print("[NamerPro] Bắt đầu auto farm")
-end)
+-- Button: Start Farm
+ButtonsModule.Create(farmTab, "Start Farm", function()
+    if AutoFarm and AutoFarm.Start then
+        AutoFarm.Start(EnemyList)
+        print("[NamerPro] Bắt đầu Auto Farm!")
+    else
+        warn("[NamerPro] ❌ AutoFarm module chưa sẵn sàng!")
+        end
