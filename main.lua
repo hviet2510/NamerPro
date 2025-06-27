@@ -2,8 +2,8 @@
 local DrRayLibrary = loadstring(game:HttpGet("https://raw.githubusercontent.com/hviet2510/NamerPro/main/DrRay-ui.lua"))()
 
 -- Import Tabs & Buttons module của bạn
-local TabsModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/hviet2510/NamerPro/main/modules/Tabs.lua"))()
-local ButtonsModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/hviet2510/NamerPro/main/modules/Buttons.lua"))()
+local TabsModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/hviet2510/NamerPro/main/module/Tabs.lua"))()
+local ButtonsModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/hviet2510/NamerPro/main/module/Buttons.lua"))()
 
 -- Tạo window
 local window = DrRayLibrary:Load("NamerPro UI", "Default")
