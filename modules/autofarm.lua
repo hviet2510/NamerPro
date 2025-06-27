@@ -39,9 +39,9 @@ function AutoFarm.Start(enemyList)
                 AutoFarm.MoveToTarget(target)
                 AutoFarm.AttackTarget(target)
             else
-                warn("[AutoFarm] Không tìm thấy quái phù hợp!")
+                warn("[AutoFarm] Không tìm thấy quái!")
             end
-            task.wait(0.5) -- delay giữa mỗi vòng farm
+            task.wait(0.5)
         end
     end)
 end
@@ -50,9 +50,10 @@ function AutoFarm.GetEnemyByLevel(enemyList)
     local playerLevel = game.Players.LocalPlayer.Data.Level.Value
     for _, enemy in ipairs(enemyList) do
         if playerLevel >= enemy.MinLevel and playerLevel <= enemy.MaxLevel then
-            local mob = workspace:FindFirstChild(enemy.Name)
-            if mob and mob:FindFirstChild("Humanoid") and mob.Humanoid.Health > 0 then
-                return mob
+            for _, mob in pairs(workspace:GetChildren()) do
+                if mob.Name == enemy.Name and mob:FindFirstChild("Humanoid") and mob.Humanoid.Health > 0 then
+                    return mob
+                end
             end
         end
     end
@@ -77,8 +78,6 @@ function AutoFarm.AttackTarget(target)
         local tool = game.Players.LocalPlayer.Character:FindFirstChildOfClass("Tool")
         if tool then
             tool:Activate()
-        else
-            warn("[AutoFarm] Chưa trang bị tool!")
         end
         task.wait(0.3)
     end
