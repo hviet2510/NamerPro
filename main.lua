@@ -7,22 +7,30 @@ local EnemyList = loadstring(game:HttpGet("https://raw.githubusercontent.com/hvi
 -- Tạo window
 local window = DrRayLibrary:Load("NamerPro UI", "Default")
 
--- Tạo Tab Farm Level
+-- Tab Farm Level
 local farmTab = TabsModule.Create(window, "Farm Level", "ImageIdFarm")
 ButtonsModule.Create(farmTab, "Start Farm", function()
-    AutoFarm.Start(EnemyList)
+    if AutoFarm and AutoFarm.Start then
+        AutoFarm.Start(EnemyList)
+    else
+        warn("[NamerPro] AutoFarm module chưa sẵn sàng!")
+    end
 end)
 ButtonsModule.CreateToggle(farmTab, "Auto Farm Toggle", false, function(state)
-    AutoFarm.Toggle(state)
+    if AutoFarm and AutoFarm.Toggle then
+        AutoFarm.Toggle(state)
+    else
+        warn("[NamerPro] AutoFarm module chưa sẵn sàng!")
+    end
 end)
 
--- Tạo Tab Config
+-- Tab Config
 local configTab = TabsModule.Create(window, "Config", "ImageIdConfig")
 ButtonsModule.CreateDropdown(configTab, "Farm Mode", {"Bình Thường", "Nhanh", "An Toàn"}, function(selected)
     print("[NamerPro] Đã chọn mode: " .. selected)
 end)
 
--- Tạo Tab Stats
+-- Tab Stats
 local statsTab = TabsModule.Create(window, "Stats", "ImageIdStats")
 ButtonsModule.CreateToggle(statsTab, "Auto Melee", false, function(state)
     print("[NamerPro] Auto Melee: " .. (state and "BẬT" or "TẮT"))
