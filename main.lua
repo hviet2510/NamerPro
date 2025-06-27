@@ -1,10 +1,15 @@
 local DrRayLibrary = loadstring(game:HttpGet("https://raw.githubusercontent.com/hviet2510/NamerPro/main/DrRay-ui.lua"))()
-
-local TabsModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/hviet2510/NamerPro/main/module/Tabs.lua"))()
-local ButtonsModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/hviet2510/NamerPro/main/module/Buttons.lua"))()
+local Tabs = loadstring(game:HttpGet("https://raw.githubusercontent.com/hviet2510/NamerPro/main/modules/tabs.lua"))()
+local Buttons = loadstring(game:HttpGet("https://raw.githubusercontent.com/hviet2510/NamerPro/main/modules/buttons.lua"))()
+local AutoFarm = loadstring(game:HttpGet("https://raw.githubusercontent.com/hviet2510/NamerPro/main/modules/autofarm.lua"))()
+local EnemyList = loadstring(game:HttpGet("https://raw.githubusercontent.com/hviet2510/NamerPro/main/modules/enemylist.lua"))()
 
 local window = DrRayLibrary:Load("NamerPro UI", "Default")
 
+local farmTab = Tabs.Create(window, "Farm Level", "ImageIdFarm")
+Buttons.Create(farmTab, "Start Farm", function()
+    AutoFarm.Start(EnemyList)
+end)
 local farmTab = TabsModule.Create(DrRayLibrary, "Farm Level", "ImageIdFarm")
 ButtonsModule.Create(farmTab, "Start Farm", function()
     print("[NamerPro] Bắt đầu auto farm")
