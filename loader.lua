@@ -12,8 +12,8 @@ if success and response and response ~= "" then
     if run then
         print("[Loader] 🎉 Đã thực thi main.lua thành công!")
     else
-        warn("[Loader] ❌ Lỗi khi chạy main.lua:\n" .. tostring(err))
+        warn("[Loader] ❌ LỖI khi chạy main.lua: ", err)
     end
 else
-    warn("[Loader] ❌ Không tải được main.lua. Kiểm tra link hoặc repo:\n" .. tostring(response))
+    warn("[Loader] ❌ LỖI tải main.lua từ GitHub: ", response)
 end
