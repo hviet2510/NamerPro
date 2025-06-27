@@ -1,7 +1,5 @@
--- Load DrRay UI
+-- Load library + modules
 local DrRayLibrary = loadstring(game:HttpGet("https://raw.githubusercontent.com/hviet2510/NamerPro/main/DrRay-ui.lua"))()
-
--- Load các module
 local AutoFarm = loadstring(game:HttpGet("https://raw.githubusercontent.com/hviet2510/NamerPro/main/modules/autofarm.lua"))()
 local EnemyList = loadstring(game:HttpGet("https://raw.githubusercontent.com/hviet2510/NamerPro/main/modules/enemylist.lua"))()
 
@@ -9,19 +7,46 @@ local EnemyList = loadstring(game:HttpGet("https://raw.githubusercontent.com/hvi
 local window = DrRayLibrary:Load("NamerPro UI", "Default")
 
 -- Tạo tab Farm Level
-local farmTab = DrRayLibrary.newTab("Farm Level", "ImageIdHere")
+local farmTab = DrRayLibrary.newTab("Farm Level", "ImageIdFarm")
 
--- Toggle Auto Farm
-farmTab.newToggle("Auto Farm", "Bật/Tắt Auto Farm", false, function(state)
-    AutoFarm.Toggle(state, EnemyList)
+-- Tạo label
+farmTab.newLabel("Auto Farm Level với Tool")
+
+-- Tạo toggle bật/tắt Auto Farm
+farmTab.newToggle("Auto Farm", "Bật hoặc tắt auto farm", false, function(state)
+    AutoFarm.Toggle(state)
+    if state then
+        AutoFarm.Start(EnemyList)
+        print("[NamerPro] Đã bật auto farm!")
+    else
+        print("[NamerPro] Đã tắt auto farm!")
+    end
 end)
 
--- Dropdown chỉnh khoảng cách tấn công
-farmTab.newDropdown("Attack Range", "Chọn khoảng cách tấn công", {"5", "10", "15", "20", "30"}, function(selected)
-    AutoFarm.SetRange(tonumber(selected))
+-- Tạo input delay
+farmTab.newInput("Attack Delay", "Nhập delay (giây)", function(text)
+    local num = tonumber(text)
+    if num then
+        AutoFarm.SetDelay(num)
+        print("[NamerPro] Delay đặt thành: "..num)
+    else
+        warn("[NamerPro] Delay không hợp lệ!")
+    end
 end)
 
--- Dropdown chọn mode farm
-farmTab.newDropdown("Farm Mode", "Chọn mode farm", {"Bình Thường", "Nhanh", "An Toàn"}, function(mode)
-    AutoFarm.SetMode(mode)
+-- Tạo dropdown chọn tool
+local tools = {}
+for _, tool in pairs(game.Players.LocalPlayer.Backpack:GetChildren()) do
+    if tool:IsA("Tool") then
+        table.insert(tools, tool.Name)
+    end
+end
+if #tools == 0 then
+    table.insert(tools, "Không có tool")
+end
+
+farmTab.newDropdown("Chọn Tool", "Tool dùng để farm", tools, function(selected)
+    if selected ~= "Không có tool" then
+        AutoFarm.SetTool(selected)
+    end
 end)
