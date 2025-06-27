@@ -11,35 +11,12 @@ local window = DrRayLibrary:Load("NamerPro UI", "Default")
 -- Tạo Tab Farm Level
 local farmTab = window:newTab("Farm Level", "ImageIdFarm")
 
--- Toggle: Auto Farm
-farmTab.newToggle("Auto Farm", "Bật/Tắt auto farm", false, function(state)
-    AutoFarm.Toggle(state, EnemyList)
-end)
-
--- Input: Delay tấn công
-farmTab.newInput("Delay (giây)", "Nhập delay tấn công (VD: 1)", function(text)
-    local n = tonumber(text)
-    if n then
-        AutoFarm.SetDelay(n)
-        print("[NamerPro] Delay set: " .. n)
+-- Toggle Auto Farm
+farmTab.newToggle("Auto Farm Level", "Bật/Tắt Auto Farm Level", false, function(state)
+    if AutoFarm and AutoFarm.Toggle then
+        AutoFarm.Toggle(state, EnemyList)
+        print("[NamerPro] Auto Farm Level: " .. (state and "BẬT" or "TẮT"))
     else
-        warn("[NamerPro] Delay không hợp lệ!")
+        warn("[NamerPro] ❌ AutoFarm module chưa sẵn sàng!")
     end
-end)
-
--- Input: Khoảng cách tấn công
-farmTab.newInput("Khoảng cách", "Khoảng cách tấn công (VD: 50)", function(text)
-    local n = tonumber(text)
-    if n then
-        AutoFarm.SetDistance(n)
-        print("[NamerPro] Khoảng cách set: " .. n)
-    else
-        warn("[NamerPro] Khoảng cách không hợp lệ!")
-    end
-end)
-
--- Dropdown: Farm Mode
-farmTab.newDropdown("Farm Mode", "Chọn mode farm", {"Bình Thường", "Nhanh", "An Toàn"}, function(selected)
-    AutoFarm.SetMode(selected)
-    print("[NamerPro] Mode farm: " .. selected)
 end)
