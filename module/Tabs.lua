@@ -1,9 +1,10 @@
-local DrRayLibrary = loadstring(game:HttpGet("https://raw.githubusercontent.com/hviet2510/NamerPro/main/DrRay-ui.lua"))()
+return function(DrRayLibrary)
+    local Tabs = {}
 
-local Tabs = {}
+    function Tabs.Create(window, name, imageId)
+        -- Gọi DrRayLibrary để tạo tab mới
+        return DrRayLibrary.newTab(name, imageId)
+    end
 
-function Tabs.Create(window, name, imageId)
-    return DrRayLibrary.newTab(name, imageId)
+    return Tabs
 end
-
-return Tabs
