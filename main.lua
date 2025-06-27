@@ -4,25 +4,21 @@ local DrRayLibrary = loadstring(game:HttpGet("https://raw.githubusercontent.com/
 -- Load các module
 local AutoFarm = loadstring(game:HttpGet("https://raw.githubusercontent.com/hviet2510/NamerPro/main/modules/autofarm.lua"))()
 local EnemyList = loadstring(game:HttpGet("https://raw.githubusercontent.com/hviet2510/NamerPro/main/modules/enemylist.lua"))()
+local AutoStats = loadstring(game:HttpGet("https://raw.githubusercontent.com/hviet2510/NamerPro/main/modules/autostats.lua"))()
 
 -- Tạo window
 local window = DrRayLibrary:Load("NamerPro UI", "Default")
 
--- Tab Farm Level (chỉ chứa Auto Farm)
+-- Tab Farm Level
 local farmTab = DrRayLibrary.newTab("Farm Level", "ImageIdHere")
 farmTab.newLabel("Farm quái tự động theo level")
 
 farmTab.newToggle("Auto Farm", "Bật/Tắt Auto Farm", false, function(state)
-    if state then
-        AutoFarm.Toggle(true, EnemyList)
-        print("[NamerPro] Auto Farm: BẬT")
-    else
-        AutoFarm.Toggle(false, EnemyList)
-        print("[NamerPro] Auto Farm: TẮT")
-    end
+    AutoFarm.Toggle(state, EnemyList)
+    print("[NamerPro] Auto Farm: " .. (state and "BẬT" or "TẮT"))
 end)
 
--- Tab Config (chứa các cấu hình)
+-- Tab Config
 local configTab = DrRayLibrary.newTab("Config", "ImageIdHere")
 configTab.newLabel("Cấu hình Auto Farm")
 
@@ -56,4 +52,18 @@ configTab.newDropdown("Chọn Tool", "Tool dùng để farm", tools, function(se
         AutoFarm.SetTool(selected)
         print("[NamerPro] Đã chọn tool: " .. selected)
     end
+end)
+
+-- Tab Auto Stats
+local statsTab = DrRayLibrary.newTab("Auto Stats", "ImageIdStats")
+statsTab.newLabel("Tự động nâng điểm")
+
+statsTab.newToggle("Auto Stats", "Bật/Tắt Auto Stats", false, function(state)
+    AutoStats.Toggle(state)
+    print("[NamerPro] Auto Stats: " .. (state and "BẬT" or "TẮT"))
+end)
+
+statsTab.newDropdown("Chỉ số", "Chọn chỉ số nâng", {"Melee", "Defense", "Sword", "Gun", "Blox Fruit"}, function(stat)
+    AutoStats.SetStat(stat)
+    print("[NamerPro] Đã chọn nâng: " .. stat)
 end)
