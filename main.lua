@@ -1,30 +1,27 @@
+-- Load DrRay UI
 local DrRayLibrary = loadstring(game:HttpGet("https://raw.githubusercontent.com/hviet2510/NamerPro/main/DrRay-ui.lua"))()
+
+-- Load các module
 local AutoFarm = loadstring(game:HttpGet("https://raw.githubusercontent.com/hviet2510/NamerPro/main/modules/autofarm.lua"))()
 local EnemyList = loadstring(game:HttpGet("https://raw.githubusercontent.com/hviet2510/NamerPro/main/modules/enemylist.lua"))()
 
-AutoFarm.SetEnemyList(EnemyList)
-
+-- Tạo window
 local window = DrRayLibrary:Load("NamerPro UI", "Default")
-local farmTab = DrRayLibrary.newTab("Farm Level", "ImageIdFarm")
 
-farmTab.newToggle("Auto Farm Level", "Bật/Tắt auto farm level", false, function(state)
-    AutoFarm.Toggle(state)
+-- Tạo tab Farm Level
+local farmTab = DrRayLibrary.newTab("Farm Level", "ImageIdHere")
+
+-- Toggle Auto Farm
+farmTab.newToggle("Auto Farm", "Bật/Tắt Auto Farm", false, function(state)
+    AutoFarm.Toggle(state, EnemyList)
 end)
 
-farmTab.newDropdown("Chọn Delay", "Chọn delay (giây)", {"0.5", "1", "1.5", "2"}, function(selected)
-    AutoFarm.SetDelay(tonumber(selected))
-end)
-
-farmTab.newDropdown("Chọn Range", "Khoảng cách tấn công", {"10", "15", "20", "25"}, function(selected)
+-- Dropdown chỉnh khoảng cách tấn công
+farmTab.newDropdown("Attack Range", "Chọn khoảng cách tấn công", {"5", "10", "15", "20", "30"}, function(selected)
     AutoFarm.SetRange(tonumber(selected))
 end)
 
-farmTab.newDropdown("Chọn Quái", "Hoặc chọn quái thủ công", (function()
-    local names = {}
-    for _, v in ipairs(EnemyList) do
-        table.insert(names, v.Name)
-    end
-    return names
-end)(), function(selected)
-    AutoFarm.SetTarget(selected)
+-- Dropdown chọn mode farm
+farmTab.newDropdown("Farm Mode", "Chọn mode farm", {"Bình Thường", "Nhanh", "An Toàn"}, function(mode)
+    AutoFarm.SetMode(mode)
 end)
