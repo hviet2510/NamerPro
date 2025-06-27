@@ -1,32 +1,23 @@
 local Buttons = {}
 
-function Buttons.CreateButton(parent, text, callback)
-    local button = Instance.new("TextButton")
-    button.Parent = parent
-    button.Size = UDim2.new(0, 200, 0, 35)
-    button.Text = text
-    button.Font = Enum.Font.Gotham
-    button.TextSize = 14
-    button.TextColor3 = Color3.fromRGB(255, 255, 255)
-    button.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+function Buttons.CreateButton(tab, text, desc, callback)
+    tab.newButton(text, desc, callback)
+end
 
-    local corner = Instance.new("UICorner", button)
-    corner.CornerRadius = UDim.new(0, 8)
-    local stroke = Instance.new("UIStroke", button)
-    stroke.Color = Color3.fromRGB(80, 80, 80)
-    stroke.Thickness = 1.5
+function Buttons.CreateToggle(tab, text, desc, default, callback)
+    tab.newToggle(text, desc, default, callback)
+end
 
-    -- Hover effect
-    button.MouseEnter:Connect(function()
-        button.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
-    end)
-    button.MouseLeave:Connect(function()
-        button.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-    end)
+function Buttons.CreateLabel(tab, text)
+    tab.newLabel(text)
+end
 
-    button.MouseButton1Click:Connect(callback)
+function Buttons.CreateInput(tab, text, desc, callback)
+    tab.newInput(text, desc, callback)
+end
 
-    return button
+function Buttons.CreateDropdown(tab, text, desc, items, callback)
+    tab.newDropdown(text, desc, items, callback)
 end
 
 return Buttons
