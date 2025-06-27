@@ -1,43 +1,23 @@
 local Buttons = {}
 
-function Buttons.Create(tab, text, callback)
-    if tab and tab.newButton then
-        tab.newButton(text, "", callback)
-    else
-        warn("[Buttons] Tab không hợp lệ hoặc thiếu newButton")
-    end
+function Buttons.Create(tab, name, callback)
+    tab.newButton(name, "Button", callback)
 end
 
-function Buttons.CreateToggle(tab, text, default, callback)
-    if tab and tab.newToggle then
-        tab.newToggle(text, "", default, callback)
-    else
-        warn("[Buttons] Tab không hợp lệ hoặc thiếu newToggle")
-    end
+function Buttons.CreateToggle(tab, name, default, callback)
+    tab.newToggle(name, "Toggle", default, callback)
 end
 
-function Buttons.CreateDropdown(tab, text, list, callback)
-    if tab and tab.newDropdown then
-        tab.newDropdown(text, "", list, callback)
-    else
-        warn("[Buttons] Tab không hợp lệ hoặc thiếu newDropdown")
-    end
+function Buttons.CreateDropdown(tab, name, options, callback)
+    tab.newDropdown(name, "Dropdown", options, callback)
 end
 
-function Buttons.CreateInput(tab, text, callback)
-    if tab and tab.newInput then
-        tab.newInput(text, "", callback)
-    else
-        warn("[Buttons] Tab không hợp lệ hoặc thiếu newInput")
-    end
+function Buttons.CreateInput(tab, name, callback)
+    tab.newInput(name, "Input", callback)
 end
 
 function Buttons.CreateLabel(tab, text)
-    if tab and tab.newLabel then
-        tab.newLabel(text)
-    else
-        warn("[Buttons] Tab không hợp lệ hoặc thiếu newLabel")
-    end
+    tab.newLabel(text)
 end
 
 return Buttons
