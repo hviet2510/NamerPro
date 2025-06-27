@@ -1,116 +1,101 @@
 local AutoFarm = {}
-local RunService = game:GetService("RunService")
+local enabled = false
+local attackDelay = 0.7
+local farmDistance = 50
+local farmMode = "Bình Thường"
+
 local TweenService = game:GetService("TweenService")
-local Player = game.Players.LocalPlayer
-local Character = function() return Player.Character or Player.CharacterAdded:Wait() end
-local AttackDelay = 1
-local MoveSpeed = 100
-local AttackDistance = 6
-local FarmMode = "Bình Thường"
-local IsFarming = false
-local CurrentTween
-local QuestNPC = nil
 
-local function moveTo(targetPos)
-    if CurrentTween then
-        CurrentTween:Cancel()
-    end
-    local root = Character():WaitForChild("HumanoidRootPart")
-    local tweenInfo = TweenInfo.new((root.Position - targetPos).Magnitude / MoveSpeed, Enum.EasingStyle.Linear)
-    CurrentTween = TweenService:Create(root, tweenInfo, {CFrame = CFrame.new(targetPos)})
-    CurrentTween:Play()
-    CurrentTween.Completed:Wait()
+function AutoFarm.SetDelay(delay)
+    attackDelay = delay
 end
 
-local function findTarget(enemyList)
-    for _, name in pairs(enemyList) do
-        for _, mob in pairs(workspace.Enemies:GetChildren()) do
-            if mob.Name == name and mob:FindFirstChild("Humanoid") and mob.Humanoid.Health > 0 then
-                return mob
-            end
+function AutoFarm.SetDistance(distance)
+    farmDistance = distance
+end
+
+function AutoFarm.SetMode(mode)
+    farmMode = mode
+end
+
+function AutoFarm.GetEnemyByLevel(enemyList, level)
+    for _, enemy in pairs(enemyList) do
+        if level >= enemy.MinLevel and level <= enemy.MaxLevel then
+            return enemy
         end
     end
     return nil
 end
 
-local function findQuestNPC()
-    if not QuestNPC then return nil end
-    for _, npc in pairs(workspace:GetDescendants()) do
-        if npc.Name == QuestNPC and npc:IsA("Model") and npc:FindFirstChild("HumanoidRootPart") then
-            return npc
-        end
+local function moveToPosition(pos)
+    local char = game.Players.LocalPlayer.Character
+    if char and char:FindFirstChild("HumanoidRootPart") then
+        local hrp = char.HumanoidRootPart
+        local tween = TweenService:Create(hrp, TweenInfo.new((hrp.Position - pos).Magnitude / 100), {CFrame = CFrame.new(pos)})
+        tween:Play()
+        tween.Completed:Wait()
     end
-    return nil
-end
-
-local function takeQuest()
-    local npc = findQuestNPC()
-    if npc then
-        moveTo(npc.HumanoidRootPart.Position + Vector3.new(0, 5, 0))
-        fireclickdetector(npc:FindFirstChildOfClass("ClickDetector"))
-        task.wait(1)
-    else
-        warn("[NamerPro] ❌ Không tìm thấy NPC nhận quest!")
-    end
-end
-
-function AutoFarm.SetFarmMode(mode)
-    FarmMode = mode
-    if mode == "Bình Thường" then
-        AttackDelay = 0.7
-        MoveSpeed = 100
-    elseif mode == "Nhanh" then
-        AttackDelay = 0.4
-        MoveSpeed = 150
-    elseif mode == "An Toàn" then
-        AttackDelay = 1
-        MoveSpeed = 70
-    end
-end
-
-function AutoFarm.SetAttackDistance(distance)
-    AttackDistance = distance
-end
-
-function AutoFarm.SetQuestNPC(name)
-    QuestNPC = name
-    print("[NamerPro] Đã đặt NPC nhận quest: " .. tostring(name))
 end
 
 function AutoFarm.Start(enemyList)
-    if IsFarming then return end
-    IsFarming = true
-    spawn(function()
-        while IsFarming do
-            takeQuest()
-            local target = findTarget(enemyList)
-            if target then
-                local pos = target.HumanoidRootPart.Position + Vector3.new(0, 0, AttackDistance)
-                moveTo(pos + Vector3.new(0, 5, 0))
-                pcall(function()
-                    repeat
-                        if not target or not target:FindFirstChild("Humanoid") or target.Humanoid.Health <= 0 then break end
-                        local tool = Character():FindFirstChildOfClass("Tool")
-                        if tool then tool:Activate() end
-                        task.wait(AttackDelay)
-                    until target.Humanoid.Health <= 0 or not IsFarming
-                end)
-            else
-                task.wait(0.5)
+    enabled = true
+    task.spawn(function()
+        while enabled do
+            local player = game.Players.LocalPlayer
+            if not player or not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then
+                warn("[AutoFarm] Không tìm thấy nhân vật!")
+                task.wait(1)
+                continue
             end
+            local level = player.Data.Level.Value
+            local enemy = AutoFarm.GetEnemyByLevel(enemyList, level)
+            if enemy then
+                -- Di chuyển nhận quest
+                if enemy.QuestPos then
+                    moveToPosition(enemy.QuestPos + Vector3.new(0, 5, 0))
+                    print("[AutoFarm] Đã nhận quest: " .. enemy.QuestName)
+                    task.wait(0.5)
+                end
+
+                -- Tìm quái
+                local mobs = workspace.Enemies:GetChildren()
+                local found = false
+                for _, mob in pairs(mobs) do
+                    if mob.Name == enemy.Name and mob:FindFirstChild("Humanoid") and mob.Humanoid.Health > 0 then
+                        found = true
+                        -- Di chuyển đến quái
+                        local pos = mob.HumanoidRootPart.Position + (player.Character.HumanoidRootPart.Position - mob.HumanoidRootPart.Position).Unit * farmDistance
+                        moveToPosition(pos)
+                        -- Tấn công
+                        while mob.Humanoid.Health > 0 and enabled do
+                            print("[AutoFarm] Đang đánh: " .. mob.Name)
+                            -- Ở đây bạn có thể gọi skill Z/X/C nếu muốn
+                            task.wait(attackDelay)
+                        end
+                        break
+                    end
+                end
+                if not found then
+                    print("[AutoFarm] Không tìm thấy quái gần, đợi spawn...")
+                    task.wait(1)
+                end
+            else
+                warn("[AutoFarm] Không tìm thấy enemy cho level: " .. level)
+                task.wait(2)
+            end
+            task.wait(0.1)
         end
     end)
 end
 
-function AutoFarm.Toggle(state)
-    IsFarming = state
-    if not state and CurrentTween then
-        CurrentTween:Cancel()
+function AutoFarm.Toggle(state, enemyList)
+    if state then
+        AutoFarm.Start(enemyList)
+        print("[AutoFarm] AutoFarm BẬT")
+    else
+        enabled = false
+        print("[AutoFarm] AutoFarm TẮT")
     end
-end
-
-function AutoFarm.SetDelay(delay)
-    AttackDelay = delay
 end
 
 return AutoFarm
