@@ -5,15 +5,13 @@ local success, response = pcall(function()
 end)
 
 if success and response and response ~= "" then
-    print("[Loader] ✅ Đã tải main.lua thành công. Đang thực thi...")
+    print("[Loader] ✅ Đã tải main.lua thành công.")
     local run, err = pcall(function()
         loadstring(response)()
     end)
-    if run then
-        print("[Loader] 🎉 Đã thực thi main.lua thành công!")
-    else
-        warn("[Loader] ❌ LỖI khi chạy main.lua: ", err)
+    if not run then
+        warn("[Loader] ❌ Lỗi khi chạy main.lua: " .. tostring(err))
     end
 else
-    warn("[Loader] ❌ LỖI tải main.lua từ GitHub: ", response)
+    warn("[Loader] ❌ Không tải được main.lua: " .. tostring(response))
 end
