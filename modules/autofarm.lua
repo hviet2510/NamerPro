@@ -1,86 +1,58 @@
 local AutoFarm = {}
-local isFarming = false
-local attackRange = 10
-local farmMode = "Bình Thường"
-local selectedTool = nil
+local farming = false
+local toolName = nil
+local attackRange = 15
 
-function AutoFarm.SetRange(range)
-    attackRange = range
-end
-
-function AutoFarm.SetMode(mode)
-    farmMode = mode
-end
-
-function AutoFarm.SetTool(toolName)
-    selectedTool = toolName
+local function tweenTo(cf)
+    local char = game.Players.LocalPlayer.Character
+    if char and char:FindFirstChild("HumanoidRootPart") then
+        local ts = game:GetService("TweenService")
+        local tween = ts:Create(char.HumanoidRootPart, TweenInfo.new(0.5, Enum.EasingStyle.Linear), {CFrame = cf})
+        tween:Play()
+        tween.Completed:Wait()
+    end
 end
 
 function AutoFarm.Toggle(state, enemyList)
-    isFarming = state
-    if isFarming then
-        AutoFarm.Start(enemyList)
-    end
-end
+    farming = state
+    if state then
+        task.spawn(function()
+            while farming and task.wait(0.5) do
+                local level = game.Players.LocalPlayer.Data.Level.Value
+                local target = enemyList.GetByLevel(level)
+                if not target then continue end
 
-function AutoFarm.EquipTool()
-    local player = game.Players.LocalPlayer
-    if selectedTool and player.Backpack:FindFirstChild(selectedTool) then
-        player.Character.Humanoid:EquipTool(player.Backpack:FindFirstChild(selectedTool))
-    end
-end
+                local enemy = nil
+                for _, v in pairs(workspace.Enemies:GetChildren()) do
+                    if v.Name == target.name and v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 then
+                        enemy = v
+                        break
+                    end
+                end
 
-function AutoFarm.Start(enemyList)
-    task.spawn(function()
-        while isFarming do
-            local target = AutoFarm.GetEnemyByLevel(enemyList)
-            if target then
-                AutoFarm.EquipTool()
-                AutoFarm.MoveToTarget(target)
-                AutoFarm.AttackTarget(target)
-            else
-                warn("[AutoFarm] Không tìm thấy quái!")
-            end
-            task.wait(0.5)
-        end
-    end)
-end
-
-function AutoFarm.GetEnemyByLevel(enemyList)
-    local playerLevel = game.Players.LocalPlayer.Data.Level.Value
-    for _, enemy in ipairs(enemyList) do
-        if playerLevel >= enemy.MinLevel and playerLevel <= enemy.MaxLevel then
-            for _, mob in pairs(workspace:GetChildren()) do
-                if mob.Name == enemy.Name and mob:FindFirstChild("Humanoid") and mob.Humanoid.Health > 0 then
-                    return mob
+                if enemy then
+                    tweenTo(enemy.HumanoidRootPart.CFrame * CFrame.new(0, 0, -attackRange))
+                    local tool = toolName and (game.Players.LocalPlayer.Backpack:FindFirstChild(toolName) or game.Players.LocalPlayer.Character:FindFirstChild(toolName))
+                    if tool then
+                        tool.Parent = game.Players.LocalPlayer.Character
+                        tool:Activate()
+                    else
+                        game.Players.LocalPlayer.Character.Humanoid:ChangeState(3)
+                    end
+                else
+                    tweenTo(target.cf)
                 end
             end
-        end
-    end
-    return nil
-end
-
-function AutoFarm.MoveToTarget(target)
-    local hrp = game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-    if hrp and target:FindFirstChild("HumanoidRootPart") then
-        local distance = (hrp.Position - target.HumanoidRootPart.Position).Magnitude
-        if distance > attackRange then
-            local tweenService = game:GetService("TweenService")
-            local tween = tweenService:Create(hrp, TweenInfo.new(distance / 50, Enum.EasingStyle.Linear), {CFrame = target.HumanoidRootPart.CFrame * CFrame.new(0, 0, -attackRange)})
-            tween:Play()
-            tween.Completed:Wait()
-        end
+        end)
     end
 end
 
-function AutoFarm.AttackTarget(target)
-    while isFarming and target and target:FindFirstChild("Humanoid") and target.Humanoid.Health > 0 do
-        local tool = game.Players.LocalPlayer.Character:FindFirstChildOfClass("Tool")
-        if tool then
-            tool:Activate()
-        end
-        task.wait(0.3)
-    end
+function AutoFarm.SetTool(name)
+    toolName = name
+end
+
+function AutoFarm.SetRange(r)
+    attackRange = r
 end
 
 return AutoFarm
