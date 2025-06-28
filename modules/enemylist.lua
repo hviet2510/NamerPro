@@ -1,4 +1,4 @@
-local EnemyList = {
+return {
     { Name = "Bandit", MinLevel = 1, MaxLevel = 15 },
     { Name = "Monkey", MinLevel = 16, MaxLevel = 30 },
     { Name = "Gorilla", MinLevel = 31, MaxLevel = 55 },
@@ -18,14 +18,3 @@ local EnemyList = {
     { Name = "Fishman Warrior", MinLevel = 601, MaxLevel = 650 },
     { Name = "Fishman Commando", MinLevel = 651, MaxLevel = 700 }
 }
-
-function EnemyList.GetEnemyByLevel(level)
-    for _, enemy in ipairs(EnemyList) do
-        if level >= enemy.MinLevel and level <= enemy.MaxLevel then
-            return enemy.Name
-        end
-    end
-    return nil
-end
-
-return EnemyList
