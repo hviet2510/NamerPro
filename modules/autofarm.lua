@@ -13,20 +13,26 @@ local function getChar()
     return lp.Character or lp.CharacterAdded:Wait()
 end
 
-local function waitLeaderstats()
-    local stats = lp:FindFirstChild("leaderstats") or lp:WaitForChild("leaderstats", 5)
+local function getLevel()
+    local stats = lp:FindFirstChild("leaderstats")
+    if not stats then
+        stats = lp:WaitForChild("leaderstats", 3)
+    end
     if not stats then
         warn("[NamerPro] ⚠ Không tìm thấy leaderstats!")
         return nil
     end
 
-    local level = stats:FindFirstChild("Level") or stats:WaitForChild("Level", 5)
+    local level = stats:FindFirstChild("Level")
     if not level then
-        warn("[NamerPro] ⚠ Không tìm thấy Level!")
+        level = stats:WaitForChild("Level", 3)
+    end
+    if not level then
+        warn("[NamerPro] ⚠ Không tìm thấy Level trong leaderstats!")
         return nil
     end
 
-    return level
+    return level.Value
 end
 
 function AutoFarm.SetRange(range)
@@ -73,9 +79,8 @@ function AutoFarm.TweenTo(pos)
 end
 
 function AutoFarm.GetEnemy(enemyList)
-    local levelVal = waitLeaderstats()
-    if not levelVal then return nil end
-    local lv = levelVal.Value
+    local lv = getLevel()
+    if not lv then return nil end
 
     for _, e in pairs(enemyList) do
         if lv >= e.MinLevel and lv <= e.MaxLevel then
@@ -93,9 +98,11 @@ function AutoFarm.AutoQuest(mobName)
     local npc = workspace:FindFirstChild("QuestNPC")
     if npc and (not lp.PlayerGui:FindFirstChild("QuestFrame")) then
         AutoFarm.TweenTo(npc.Position + Vector3.new(0, 3, 0))
-        fireclickdetector(npc:FindFirstChildOfClass("ClickDetector"))
+        local cd = npc:FindFirstChildOfClass("ClickDetector")
+        if cd then
+            fireclickdetector(cd)
+        end
         task.wait(0.5)
-        -- Tuỳ game: thêm code chọn quest nếu cần
     end
 end
 
