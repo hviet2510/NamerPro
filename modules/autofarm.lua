@@ -9,6 +9,26 @@ local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local lp = Players.LocalPlayer
 
+local function getChar()
+    return lp.Character or lp.CharacterAdded:Wait()
+end
+
+local function waitLeaderstats()
+    local stats = lp:FindFirstChild("leaderstats") or lp:WaitForChild("leaderstats", 5)
+    if not stats then
+        warn("[NamerPro] ⚠ Không tìm thấy leaderstats!")
+        return nil
+    end
+
+    local level = stats:FindFirstChild("Level") or stats:WaitForChild("Level", 5)
+    if not level then
+        warn("[NamerPro] ⚠ Không tìm thấy Level!")
+        return nil
+    end
+
+    return level
+end
+
 function AutoFarm.SetRange(range)
     AutoFarm.Range = range
 end
@@ -22,14 +42,14 @@ function AutoFarm.SetTool(toolName)
 end
 
 function AutoFarm.EquipTool()
-    local char = lp.Character
+    local char = getChar()
     local bp = lp.Backpack
-    if char and AutoFarm.ToolName then
+    if AutoFarm.ToolName then
         local tool = char:FindFirstChild(AutoFarm.ToolName) or bp:FindFirstChild(AutoFarm.ToolName)
         if tool then
             tool.Parent = char
         end
-    elseif char then
+    else
         local tool = bp:FindFirstChildOfClass("Tool")
         if tool then
             tool.Parent = char
@@ -38,8 +58,8 @@ function AutoFarm.EquipTool()
 end
 
 function AutoFarm.TweenTo(pos)
-    local char = lp.Character
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    local char = getChar()
+    local hrp = char:FindFirstChild("HumanoidRootPart")
     if hrp then
         local dist = (hrp.Position - pos).Magnitude
         local speed = 100
@@ -53,16 +73,9 @@ function AutoFarm.TweenTo(pos)
 end
 
 function AutoFarm.GetEnemy(enemyList)
-    local char = lp.Character
-    if not char then return nil end
-
-    local leaderstats = lp:FindFirstChild("leaderstats")
-    local levelVal = leaderstats and leaderstats:FindFirstChild("Level")
-    local lv = levelVal and levelVal.Value
-    if not lv then
-        warn("[NamerPro] ⚠ Không tìm thấy Level hoặc leaderstats!")
-        return nil
-    end
+    local levelVal = waitLeaderstats()
+    if not levelVal then return nil end
+    local lv = levelVal.Value
 
     for _, e in pairs(enemyList) do
         if lv >= e.MinLevel and lv <= e.MaxLevel then
@@ -76,12 +89,13 @@ function AutoFarm.GetEnemy(enemyList)
     return nil
 end
 
-function AutoFarm.AutoQuest()
+function AutoFarm.AutoQuest(mobName)
     local npc = workspace:FindFirstChild("QuestNPC")
-    if npc and npc:FindFirstChild("ClickDetector") and not lp.PlayerGui:FindFirstChild("QuestFrame") then
+    if npc and (not lp.PlayerGui:FindFirstChild("QuestFrame")) then
         AutoFarm.TweenTo(npc.Position + Vector3.new(0, 3, 0))
-        fireclickdetector(npc.ClickDetector)
+        fireclickdetector(npc:FindFirstChildOfClass("ClickDetector"))
         task.wait(0.5)
+        -- Tuỳ game: thêm code chọn quest nếu cần
     end
 end
 
@@ -92,12 +106,11 @@ function AutoFarm.Toggle(state, enemyList)
             while AutoFarm.Active do
                 local mob = AutoFarm.GetEnemy(enemyList)
                 if mob and mob:FindFirstChild("HumanoidRootPart") then
-                    AutoFarm.AutoQuest()
+                    AutoFarm.AutoQuest(mob.Name)
                     AutoFarm.TweenTo(mob.HumanoidRootPart.Position + Vector3.new(0, 0, AutoFarm.Range))
                     AutoFarm.EquipTool()
-
-                    while AutoFarm.Active and mob.Parent and mob:FindFirstChild("Humanoid") and mob.Humanoid.Health > 0 do
-                        local tool = lp.Character and lp.Character:FindFirstChildOfClass("Tool")
+                    while AutoFarm.Active and mob.Parent and mob.Humanoid.Health > 0 do
+                        local tool = getChar():FindFirstChildOfClass("Tool")
                         if tool then
                             tool:Activate()
                         end
