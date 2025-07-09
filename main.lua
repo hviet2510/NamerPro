@@ -1,5 +1,5 @@
 -- 🧠 Load UI Library (DrRay)
-local DrRayLibrary = loadstring(game:HttpGet("https://raw.githubusercontent.com/hviet2510/NamerPro/main/DrRay-ui.lua"))()
+local DrRayLibrary = loadstring(game:HttpGet("https://raw.githubusercontent.com/hviet2510/NamerPro/main/ui_lib.lua"))()
 
 -- ✅ Load EnemyList TRƯỚC (vì AutoFarm cần nó)
 local EnemyList = loadstring(game:HttpGet("https://raw.githubusercontent.com/hviet2510/NamerPro/main/modules/enemylist.lua"))()
