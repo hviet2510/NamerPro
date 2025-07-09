@@ -1,42 +1,50 @@
--- Load DrRay UI
+-- 🧠 Load UI Library (DrRay)
 local DrRayLibrary = loadstring(game:HttpGet("https://raw.githubusercontent.com/hviet2510/NamerPro/main/DrRay-ui.lua"))()
 
--- Load modules
-local AutoFarm = loadstring(game:HttpGet("https://raw.githubusercontent.com/hviet2510/NamerPro/main/modules/autofarm.lua"))()
+-- ✅ Load EnemyList TRƯỚC (vì AutoFarm cần nó)
 local EnemyList = loadstring(game:HttpGet("https://raw.githubusercontent.com/hviet2510/NamerPro/main/modules/enemylist.lua"))()
 
--- UI Setup
-local window = DrRayLibrary:Load("NamerPro Premium", "Default")
+-- ✅ Load AutoFarm SAU (đã fix không dùng global enemyList)
+local AutoFarm = loadstring(game:HttpGet("https://raw.githubusercontent.com/hviet2510/NamerPro/main/modules/autofarm.lua"))()
 
--- 🗡️ Tab: Farm
-local farmTab = DrRayLibrary.newTab("Farm Level", "rbxassetid://12345678")
-farmTab.newLabel("Farm tự động theo level")
+-- 🪟 Tạo cửa sổ chính
+local window = DrRayLibrary:Load("NamerPro UI", "Default")
+
+-- 📁 Tab: Farm Level
+local farmTab = DrRayLibrary.newTab("Farm Level", "ImageIdHere")
+
+farmTab.newLabel("Farm quái tự động theo level")
 
 farmTab.newToggle("Auto Farm", "Bật/Tắt Auto Farm", false, function(state)
-    AutoFarm.Toggle(state)
+    AutoFarm.Toggle(state, EnemyList)
 end)
 
--- 🛠️ Tab: Cấu Hình
-local configTab = DrRayLibrary.newTab("Cấu Hình", "rbxassetid://87654321")
+-- ⚙️ Tab: Config
+local configTab = DrRayLibrary.newTab("Config", "ImageIdHere")
 
-configTab.newDropdown("Khoảng cách tấn công", "Chọn range", {"5", "10", "15", "20", "30"}, function(range)
-    AutoFarm.SetRange(tonumber(range))
+configTab.newDropdown("Attack Range", "Khoảng cách tấn công", {"5", "10", "15", "20", "30"}, function(selected)
+    local dist = tonumber(selected)
+    if dist then
+        AutoFarm.SetRange(dist)
+    end
 end)
 
-configTab.newDropdown("Chế độ Farm", "Chọn mode", {"Bình Thường", "Nhanh", "An Toàn"}, function(mode)
+configTab.newDropdown("Farm Mode", "Chế độ farm", {"Bình Thường", "Nhanh", "An Toàn"}, function(mode)
     AutoFarm.SetMode(mode)
 end)
 
--- 🔪 Chọn Tool
-local toolNames = {}
-for _, tool in ipairs(game.Players.LocalPlayer.Backpack:GetChildren()) do
+-- 🎯 Chọn Tool
+local tools = {}
+for _, tool in pairs(game.Players.LocalPlayer.Backpack:GetChildren()) do
     if tool:IsA("Tool") then
-        table.insert(toolNames, tool.Name)
+        table.insert(tools, tool.Name)
     end
 end
-if #toolNames == 0 then table.insert(toolNames, "Không có tool") end
+if #tools == 0 then
+    table.insert(tools, "Không có tool")
+end
 
-configTab.newDropdown("Chọn Tool", "Tool để farm", toolNames, function(selected)
+configTab.newDropdown("Chọn Tool", "Tool dùng để farm", tools, function(selected)
     if selected ~= "Không có tool" then
         AutoFarm.SetTool(selected)
     end
