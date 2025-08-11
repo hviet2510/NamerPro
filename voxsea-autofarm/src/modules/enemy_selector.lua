@@ -1,70 +1,49 @@
--- Module: enemy_selector.lua
--- Chọn quái phù hợp nhất theo level người chơi
--- Tối ưu cho mobile (ít vòng lặp, cache kết quả)
+-- enemy_selector.lua
+-- Chọn mob phù hợp trong workspace theo level người chơi
 
 local EnemySelector = {}
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
-local Workspace = game:GetService("Workspace")
 
--- ====== CONFIG MAPPING LEVEL → QUÁI ======
--- Có thể chỉnh trong config.lua rồi require vào
-local EnemyList = {
-    {Level = 1, Name = "Bandit"},
-    {Level = 10, Name = "Monkey"},
-    {Level = 20, Name = "Gorilla"},
-    {Level = 30, Name = "Pirate"},
-    {Level = 50, Name = "Brute"},
-    {Level = 80, Name = "Desert Bandit"},
-    {Level = 100, Name = "Desert Officer"},
-}
-
--- Cache quái đang target để tránh quét lại nhiều lần
-local cachedTarget = nil
-local lastCheck = 0
-local CHECK_INTERVAL = 1 -- giây
-
--- ====== HÀM TÌM QUÁI PHÙ HỢP ======
-function EnemySelector:GetTarget()
-    local now = tick()
-    if cachedTarget and cachedTarget.Parent and (now - lastCheck) < CHECK_INTERVAL then
-        return cachedTarget
-    end
-
-    lastCheck = now
-
-    -- Lấy level người chơi
-    local playerLevel = 1
-    local stats = LocalPlayer:FindFirstChild("Data")
+-- Hàm lấy level người chơi
+local function GetPlayerLevel()
+    local player = game.Players.LocalPlayer
+    -- Ví dụ: level lưu ở Stats.Level.Value
+    local stats = player:FindFirstChild("Stats")
     if stats and stats:FindFirstChild("Level") then
-        playerLevel = stats.Level.Value
+        return stats.Level.Value
     end
+    return 1
+end
 
-    -- Xác định quái phù hợp nhất theo level
-    local targetName = nil
-    for i = #EnemyList, 1, -1 do
-        if playerLevel >= EnemyList[i].Level then
-            targetName = EnemyList[i].Name
-            break
-        end
-    end
+-- Hàm chọn mob gần nhất & phù hợp
+function EnemySelector:GetTargetMob()
+    local playerLevel = GetPlayerLevel()
+    local player = game.Players.LocalPlayer
+    local char = player.Character
+    if not char or not char:FindFirstChild("HumanoidRootPart") then return nil end
 
-    if not targetName then return nil end
+    local bestMob = nil
+    local shortestDistance = math.huge
 
-    -- Tìm quái gần nhất trong Workspace
-    local closest, closestDist = nil, math.huge
-    for _, mob in ipairs(Workspace.Enemies:GetChildren()) do
-        if mob.Name == targetName and mob:FindFirstChild("Humanoid") and mob.Humanoid.Health > 0 then
-            local dist = (mob.HumanoidRootPart.Position - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
-            if dist < closestDist then
-                closestDist = dist
-                closest = mob
+    for _, mob in pairs(workspace:GetDescendants()) do
+        if mob:FindFirstChild("Humanoid") 
+           and mob:FindFirstChild("HumanoidRootPart") 
+           and mob.Humanoid.Health > 0 then
+
+            -- Lọc level mob theo tên (VD: "Bandit [Lv. 5]")
+            local mobLevel = tonumber(string.match(mob.Name, "%[Lv%. (%d+)%]")) or 1
+
+            -- Chỉ chọn mob có level gần level người chơi ±5
+            if math.abs(mobLevel - playerLevel) <= 5 then
+                local dist = (mob.HumanoidRootPart.Position - char.HumanoidRootPart.Position).Magnitude
+                if dist < shortestDistance then
+                    shortestDistance = dist
+                    bestMob = mob
+                end
             end
         end
     end
 
-    cachedTarget = closest
-    return cachedTarget
+    return bestMob
 end
 
 return EnemySelector
