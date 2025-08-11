@@ -1,54 +1,83 @@
 -- test_loader.lua
--- Giả lập Roblox loadstring(game:HttpGet(...)) trong môi trường thường
+-- Test auto-scan & load modules từ GitHub repo
 
--- ===== CONFIG =====
-local GITHUB_USER = "hviet2510"
-local GITHUB_REPO = "NamerPro"
-local MODULES_PATH = "voxsea-autofarm/src" -- Thư mục chứa modules
-local BRANCH = "main"
+local http = require("socket.http")
+local json = require("dkjson")
 
--- ===== FUNCTION: Lấy danh sách file từ GitHub API =====
-local function fetchFilesFromGitHub(path)
-    local apiUrl = string.format(
-        "https://api.github.com/repos/%s/%s/contents/%s?ref=%s",
-        GITHUB_USER, GITHUB_REPO, path, BRANCH
-    )
+-- ===================== CONFIG =====================
+local owner = "hviet2510"
+local repo = "NamerPro"
+local path = "voxsea-autofarm/src"
+local branch = "main"
+-- ===================================================
 
-    local handle = io.popen("curl -s \"" .. apiUrl .. "\"")
-    local result = handle:read("*a")
-    handle:close()
+-- Hàm tải dữ liệu từ URL
+local function fetch(url)
+    local body, code, headers, status = http.request {
+            url = url,
+                    method = "GET",
+                            headers = {
+                                        ["User-Agent"] = "Lua GitHub Loader Test"
+                                                }
+                                                    }
+                                                        if not body then
+                                                                return nil, "Không nhận được phản hồi từ server"
+                                                                    end
+                                                                        if code ~= 200 then
+                                                                                return nil, "HTTP Code: " .. tostring(code)
+                                                                                    end
+                                                                                        return body
+                                                                                        end
 
-    local json = require("dkjson") -- Cần cài thư viện dkjson (chạy: luarocks install dkjson)
-    local data, pos, err = json.decode(result, 1, nil)
-    if err then
-        error("Lỗi decode JSON: " .. err)
-    end
+                                                                                        -- API URL GitHub để lấy danh sách file
+                                                                                        local apiUrl = string.format(
+                                                                                            "https://api.github.com/repos/%s/%s/contents/%s?ref=%s",
+                                                                                                owner, repo, path, branch
+                                                                                                )
 
-    return data
-end
+                                                                                                print("🔍 Đang tải danh sách modules từ GitHub...")
+                                                                                                local body, err = fetch(apiUrl)
+                                                                                                if not body then
+                                                                                                    print("❌ Lỗi:", err)
+                                                                                                        return
+                                                                                                        end
 
--- ===== FUNCTION: Tải nội dung file từ raw.githubusercontent =====
-local function fetchRawFile(path)
-    local rawUrl = string.format(
-        "https://raw.githubusercontent.com/%s/%s/%s/%s",
-        GITHUB_USER, GITHUB_REPO, BRANCH, path
-    )
-    local handle = io.popen("curl -s \"" .. rawUrl .. "\"")
-    local content = handle:read("*a")
-    handle:close()
-    return content
-end
+                                                                                                        -- Parse JSON trả về
+                                                                                                        local data, pos, jsonErr = json.decode(body, 1, nil)
+                                                                                                        if jsonErr then
+                                                                                                            print("❌ Lỗi parse JSON:", jsonErr)
+                                                                                                                return
+                                                                                                                end
 
--- ===== MAIN: Auto scan & load =====
-print("🔍 Đang quét thư mục modules từ GitHub...")
-local files = fetchFilesFromGitHub(MODULES_PATH)
+                                                                                                                -- Lọc danh sách file .lua
+                                                                                                                local luaFiles = {}
+                                                                                                                for _, file in ipairs(data) do
+                                                                                                                    if file.name:match("%.lua$") and file.name ~= "main.lua" then
+                                                                                                                            table.insert(luaFiles, file)
+                                                                                                                                end
+                                                                                                                                end
 
-for _, file in ipairs(files) do
-    if file.type == "file" and file.name:match("%.lua$") then
-        print("📄 Đang load module:", file.name)
-        local code = fetchRawFile(file.path)
-        print("   ↳ Dung lượng:", #code, "bytes")
-    end
-end
+                                                                                                                                print("📦 Tìm thấy", #luaFiles, "module(s) để load")
+                                                                                                                                print("----------------------------------")
 
-print("✅ Hoàn tất quét & load modules.")
+                                                                                                                                -- Load từng file theo thứ tự
+                                                                                                                                for i, file in ipairs(luaFiles) do
+                                                                                                                                    print(string.format("[%d/%d] Đang load: %s", i, #luaFiles, file.name))
+                                                                                                                                        local rawUrl = file.download_url
+                                                                                                                                            local content, dlErr = fetch(rawUrl)
+                                                                                                                                                if not content then
+                                                                                                                                                        print("   ❌ Lỗi tải:", dlErr)
+                                                                                                                                                            else
+                                                                                                                                                                    print("   ✅ Đã tải thành công (" .. #content .. " bytes)")
+                                                                                                                                                                            -- Test compile file (chỉ kiểm tra cú pháp, không chạy)
+                                                                                                                                                                                    local fn, syntaxErr = load(content, file.name)
+                                                                                                                                                                                            if not fn then
+                                                                                                                                                                                                        print("   ❌ Lỗi cú pháp:", syntaxErr)
+                                                                                                                                                                                                                else
+                                                                                                                                                                                                                            print("   ⚡ Cú pháp OK")
+                                                                                                                                                                                                                                    end
+                                                                                                                                                                                                                                        end
+                                                                                                                                                                                                                                        end
+
+                                                                                                                                                                                                                                        print("----------------------------------")
+                                                                                                                                                                                                                                        print("🎯 Hoàn tất test loader.")
