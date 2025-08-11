@@ -1,49 +1,71 @@
--- enemy_selector.lua
--- Chọn mob phù hợp trong workspace theo level người chơi
+-- File: enemy_selector.lua
+-- Nhiệm vụ: Chọn quái phù hợp nhất để farm dựa trên level người chơi
+
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
 
 local EnemySelector = {}
+local Player = Players.LocalPlayer
 
--- Hàm lấy level người chơi
+-- ⚙️ Cấu hình
+local ENEMY_FOLDER_NAMES = {"Enemies", "Mobs", "NPCs"} -- Thư mục chứa quái
+local LEVEL_TOLERANCE = 3 -- Chênh lệch level tối đa giữa player và quái
+
+-- 🔍 Lấy level từ tên quái (VD: "Bandit [Lv. 5]")
+function EnemySelector.GetEnemyLevel(enemy)
+    if not enemy or not enemy.Name then return nil end
+    local level = string.match(enemy.Name, "%[Lv%.%s*(%d+)%]")
+    return tonumber(level)
+end
+
+-- 📍 Lấy level của người chơi
 local function GetPlayerLevel()
-    local player = game.Players.LocalPlayer
-    -- Ví dụ: level lưu ở Stats.Level.Value
-    local stats = player:FindFirstChild("Stats")
-    if stats and stats:FindFirstChild("Level") then
-        return stats.Level.Value
+    local leaderstats = Player:FindFirstChild("leaderstats")
+    if leaderstats and leaderstats:FindFirstChild("Level") then
+        return leaderstats.Level.Value
     end
     return 1
 end
 
--- Hàm chọn mob gần nhất & phù hợp
-function EnemySelector:GetTargetMob()
-    local playerLevel = GetPlayerLevel()
-    local player = game.Players.LocalPlayer
-    local char = player.Character
-    if not char or not char:FindFirstChild("HumanoidRootPart") then return nil end
-
-    local bestMob = nil
-    local shortestDistance = math.huge
-
-    for _, mob in pairs(workspace:GetDescendants()) do
-        if mob:FindFirstChild("Humanoid") 
-           and mob:FindFirstChild("HumanoidRootPart") 
-           and mob.Humanoid.Health > 0 then
-
-            -- Lọc level mob theo tên (VD: "Bandit [Lv. 5]")
-            local mobLevel = tonumber(string.match(mob.Name, "%[Lv%. (%d+)%]")) or 1
-
-            -- Chỉ chọn mob có level gần level người chơi ±5
-            if math.abs(mobLevel - playerLevel) <= 5 then
-                local dist = (mob.HumanoidRootPart.Position - char.HumanoidRootPart.Position).Magnitude
-                if dist < shortestDistance then
-                    shortestDistance = dist
-                    bestMob = mob
+-- 🗂 Lấy toàn bộ quái trong workspace
+local function GetAllEnemies()
+    local enemies = {}
+    for _, folderName in ipairs(ENEMY_FOLDER_NAMES) do
+        local folder = Workspace:FindFirstChild(folderName)
+        if folder then
+            for _, enemy in ipairs(folder:GetChildren()) do
+                if enemy:FindFirstChild("Humanoid") and enemy:FindFirstChild("HumanoidRootPart") then
+                    table.insert(enemies, enemy)
                 end
             end
         end
     end
+    return enemies
+end
 
-    return bestMob
+-- 🧠 Chọn quái tốt nhất
+function EnemySelector.GetBestEnemy()
+    local playerLevel = GetPlayerLevel()
+    local enemies = GetAllEnemies()
+
+    local bestEnemy = nil
+    local closestDistance = math.huge
+    local playerPos = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") and Player.Character.HumanoidRootPart.Position
+
+    for _, enemy in ipairs(enemies) do
+        local level = EnemySelector.GetEnemyLevel(enemy)
+
+        -- Chỉ chọn quái có level hợp lý hoặc không có level nhưng tên phù hợp
+        if level and math.abs(level - playerLevel) <= LEVEL_TOLERANCE then
+            local dist = (enemy.HumanoidRootPart.Position - playerPos).Magnitude
+            if dist < closestDistance then
+                closestDistance = dist
+                bestEnemy = enemy
+            end
+        end
+    end
+
+    return bestEnemy
 end
 
 return EnemySelector
