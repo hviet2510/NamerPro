@@ -1,60 +1,58 @@
--- ==================== MAIN LOADER (GitHub) ====================
+-- 📌 Cấu hình repo GitHub
+local RepoBase = "https://raw.githubusercontent.com/hviet2510/NamerPro/main/voxsea-autofarm/src/"
 
--- Cấu hình repo GitHub
-local Repo = "https://raw.githubusercontent.com/<username>/<repo>/main/"
+-- 📌 Danh sách module cần load
+local Modules = {
+    "Orion.lua",         -- UI Library
+    "utils.lua",         -- Xử lý dữ liệu
+    "movement.lua",      -- Điều khiển di chuyển
+    "enemy-selector.lua" -- Chọn quái theo level
+}
 
--- Hàm tải module từ GitHub
-local function LoadModule(path)
+-- 📌 Hàm tải module từ GitHub
+local LoadedModules = {}
+local function LoadModule(name)
+    local url = RepoBase .. name
     local success, result = pcall(function()
-        return loadstring(game:HttpGet(Repo .. path))()
+        return loadstring(game:HttpGet(url))()
     end)
-    if not success then
-        warn("Lỗi tải module:", path, result)
-        return nil
+    if success then
+        LoadedModules[name] = result
+        print("[LOADED] " .. name)
+    else
+        warn("[FAILED] " .. name .. ": " .. tostring(result))
     end
-    return result
 end
 
--- ==================== TẢI UI ORION ====================
-local OrionLib = LoadModule("ui/Orion.lua")
+-- 📌 Tải tất cả module
+for _, m in ipairs(Modules) do
+    LoadModule(m)
+end
 
--- ==================== TẢI CÁC MODULE CHÍNH ====================
-local EnemySelector = LoadModule("modules/enemy_selector.lua")
-local Utils         = LoadModule("modules/utils.lua")
-local Movement      = LoadModule("modules/movement.lua")
-local QuestHandler  = LoadModule("modules/quest_handler.lua")
-local Combat        = LoadModule("modules/combat.lua")
+-- 📌 Khởi tạo UI Orion
+local OrionLib = LoadedModules["Orion.lua"]
+local Window = OrionLib:MakeWindow({
+    Name = "VoxSea AutoFarm",
+    HidePremium = false,
+    SaveConfig = true,
+    ConfigFolder = "VoxSeaFarm"
+})
 
--- ==================== TRẠNG THÁI ====================
-local AutofarmEnabled = false
-
--- ==================== CÀI UI ====================
-local Window = OrionLib:MakeWindow({Name = "VoxSea Autofarm", HidePremium = false, SaveConfig = true, ConfigFolder = "VoxSeaAF"})
-
-local TabFarm = Window:MakeTab({Name = "Autofarm", Icon = "rbxassetid://4483345998", PremiumOnly = false})
+-- 📌 Tab & chức năng
+local TabFarm = Window:MakeTab({
+    Name = "Auto Farm",
+    Icon = "rbxassetid://4483345998",
+    PremiumOnly = false
+})
 
 TabFarm:AddToggle({
-    Name = "Bật/Tắt Autofarm",
+    Name = "Bật/Tắt AutoFarm",
     Default = false,
     Callback = function(state)
-        AutofarmEnabled = state
         if state then
-            Utils.Notify("Bắt đầu Autofarm", "green")
-            task.spawn(function()
-                while AutofarmEnabled and task.wait() do
-                    local target = EnemySelector.GetBestEnemy(game.Players.LocalPlayer)
-                    if not target then
-                        Utils.Notify("Không tìm thấy quái phù hợp", "yellow")
-                        continue
-                    end
-
-                    QuestHandler.EnsureQuest(target)
-                    Movement.ToEnemy(target)
-                    Combat.Attack(target)
-                end
-            end)
+            LoadedModules["utils.lua"].StartFarm(LoadedModules, Window)
         else
-            Utils.Notify("Tắt Autofarm", "red")
+            LoadedModules["utils.lua"].StopFarm()
         end
     end
 })
