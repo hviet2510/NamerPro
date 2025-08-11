@@ -1,75 +1,70 @@
--- File: modules/enemy_selector.lua
--- Chọn mob thông minh theo level trong Vox Sea
+-- Module: enemy_selector.lua
+-- Chọn quái phù hợp nhất theo level người chơi
+-- Tối ưu cho mobile (ít vòng lặp, cache kết quả)
 
 local EnemySelector = {}
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local Workspace = game:GetService("Workspace")
 
--- Cấu hình
-local LEVEL_TOLERANCE = 5 -- ±5 level
-local SCAN_INTERVAL = 3   -- quét mới sau mỗi 3 giây
+-- ====== CONFIG MAPPING LEVEL → QUÁI ======
+-- Có thể chỉnh trong config.lua rồi require vào
+local EnemyList = {
+    {Level = 1, Name = "Bandit"},
+    {Level = 10, Name = "Monkey"},
+    {Level = 20, Name = "Gorilla"},
+    {Level = 30, Name = "Pirate"},
+    {Level = 50, Name = "Brute"},
+    {Level = 80, Name = "Desert Bandit"},
+    {Level = 100, Name = "Desert Officer"},
+}
 
--- Biến cache
-local mobCache = {}
-local lastScan = 0
+-- Cache quái đang target để tránh quét lại nhiều lần
+local cachedTarget = nil
+local lastCheck = 0
+local CHECK_INTERVAL = 1 -- giây
 
--- Lấy level của mob
-local function getMobLevel(mob)
-    if mob:FindFirstChild("Level") and tonumber(mob.Level.Value) then
-        return tonumber(mob.Level.Value)
+-- ====== HÀM TÌM QUÁI PHÙ HỢP ======
+function EnemySelector:GetTarget()
+    local now = tick()
+    if cachedTarget and cachedTarget.Parent and (now - lastCheck) < CHECK_INTERVAL then
+        return cachedTarget
     end
-    return nil
-end
 
--- Kiểm tra mob hợp lệ
-local function isValidMob(mob, playerLevel)
-    local mobLevel = getMobLevel(mob)
-    if not mobLevel then return false end
-    if math.abs(mobLevel - playerLevel) > LEVEL_TOLERANCE then return false end
+    lastCheck = now
 
-    -- Loại boss / NPC không farm
-    if mob:FindFirstChild("BossTag") or mob:FindFirstChild("NPC") then return false end
+    -- Lấy level người chơi
+    local playerLevel = 1
+    local stats = LocalPlayer:FindFirstChild("Data")
+    if stats and stats:FindFirstChild("Level") then
+        playerLevel = stats.Level.Value
+    end
 
-    -- Phải có Humanoid còn sống
-    if not mob:FindFirstChild("Humanoid") or mob.Humanoid.Health <= 0 then return false end
+    -- Xác định quái phù hợp nhất theo level
+    local targetName = nil
+    for i = #EnemyList, 1, -1 do
+        if playerLevel >= EnemyList[i].Level then
+            targetName = EnemyList[i].Name
+            break
+        end
+    end
 
-    -- Phải có PrimaryPart
-    if not mob.PrimaryPart then return false end
+    if not targetName then return nil end
 
-    return true
-end
-
--- Tính điểm ưu tiên (thấp hơn = tốt hơn)
-local function getPriorityScore(mob, playerPos, playerLevel)
-    local mobLevel = getMobLevel(mob)
-    local distance = (mob.PrimaryPart.Position - playerPos).Magnitude
-    local healthFactor = mob.Humanoid.Health
-    return distance + math.abs(playerLevel - mobLevel) * 3 + (healthFactor / 100)
-end
-
--- Lấy mob tốt nhất
-function EnemySelector.GetBestMob(player)
-    if tick() - lastScan > SCAN_INTERVAL then
-        mobCache = {}
-        local enemiesFolder = workspace:FindFirstChild("Enemies")
-        if enemiesFolder then
-            for _, mob in pairs(enemiesFolder:GetChildren()) do
-                if isValidMob(mob, player.Level.Value) then
-                    table.insert(mobCache, mob)
-                end
+    -- Tìm quái gần nhất trong Workspace
+    local closest, closestDist = nil, math.huge
+    for _, mob in ipairs(Workspace.Enemies:GetChildren()) do
+        if mob.Name == targetName and mob:FindFirstChild("Humanoid") and mob.Humanoid.Health > 0 then
+            local dist = (mob.HumanoidRootPart.Position - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+            if dist < closestDist then
+                closestDist = dist
+                closest = mob
             end
         end
-        lastScan = tick()
     end
 
-    local bestMob, bestScore
-    for _, mob in pairs(mobCache) do
-        local score = getPriorityScore(mob, player.Character.HumanoidRootPart.Position, player.Level.Value)
-        if not bestScore or score < bestScore then
-            bestScore = score
-            bestMob = mob
-        end
-    end
-
-    return bestMob
+    cachedTarget = closest
+    return cachedTarget
 end
 
 return EnemySelector
