@@ -1,0 +1,44 @@
+# ========================
+# Ignore system files
+# ========================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ========================
+# Ignore IDE/editor files
+# ========================
+.vscode/
+.idea/
+*.code-workspace
+
+# ========================
+# Ignore Roblox Studio autosave/cache (nếu có)
+# ========================
+*.rbxlx.autosave
+*.rbxl.autosave
+*.rbxm.autosave
+*.bak
+
+# ========================
+# Ignore local test scripts
+# ========================
+test/
+local/
+debug/
+*.log
+
+# ========================
+# Ignore sensitive data
+# ========================
+config.json
+*.key
+*.token
+*.secret
+
+# ========================
+# Ignore compiled / temporary files
+# ========================
+*.luac
+*.tmp
+*.temp
