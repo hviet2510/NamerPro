@@ -1,165 +1,182 @@
 -- =======================================================================
--- == Script Macro Auto Farm - Phiên bản Siêu Click (DEBUGGED v2)        ==
+-- == Script Macro Recorder - Ghi lại và Lặp lại hành động GUI          ==
 -- =======================================================================
 
 -- =======================================================================
--- == PHẦN 1: CẤU HÌNH (CONFIGURATION)                                   ==
+-- == PHẦN 1: KHỞI TẠO VÀ CÁC BIẾN TRẠNG THÁI                            ==
 -- =======================================================================
 
-local CONFIG = {
-    DIG_BUTTON_TEXT = "Dig",
-    PAN_BUTTON_TEXT = "Pan",
-    WAIT_TIME_AFTER_ACTION = 5,
-    WAIT_TIME_AFTER_TELEPORT = 1
-}
-
--- =======================================================================
--- == PHẦN 2: GIAO DIỆN NGƯỜI DÙNG (GUI)                                 ==
--- =======================================================================
-
--- (Phần này không thay đổi, giữ nguyên code tạo giao diện)
+local UserInputService = game:GetService("UserInputService")
 local player = game:GetService("Players").LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
-local character = player.Character or player.CharacterAdded:Wait()
-local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
-local sandPosition = nil
-local waterPosition = nil
-local isFarming = false
+
+-- "Cuốn sổ" để ghi lại các hành động
+local recordedActions = {}
+local isRecording = false
+local isPlaying = false
+local lastActionTime = 0
+local inputConnection = nil
+
+-- =======================================================================
+-- == PHẦN 2: GIAO DIỆN NGƯỜI DÙNG (GUI) MỚI                             ==
+-- =======================================================================
+
 local screenGui = Instance.new("ScreenGui")
 screenGui.Parent = playerGui; screenGui.ResetOnSpawn = false
 local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 300, 0, 200); mainFrame.Position = UDim2.new(0.5, -150, 0.5, -100)
+mainFrame.Size = UDim2.new(0, 220, 0, 180); mainFrame.Position = UDim2.new(0.5, -110, 0.5, -90)
 mainFrame.BackgroundColor3 = Color3.fromRGB(45, 45, 45); mainFrame.BorderColor3 = Color3.fromRGB(25, 25, 25)
 mainFrame.Draggable = true; mainFrame.Active = true; mainFrame.Parent = screenGui
 local titleLabel = Instance.new("TextLabel")
 titleLabel.Size = UDim2.new(1, 0, 0, 30); titleLabel.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-titleLabel.Text = "Auto Farm Macro"; titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+titleLabel.Text = "Macro Recorder"; titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 titleLabel.Font = Enum.Font.SourceSansBold; titleLabel.TextSize = 18; titleLabel.Parent = mainFrame
-local saveSandButton = Instance.new("TextButton")
-saveSandButton.Size = UDim2.new(0, 280, 0, 30); saveSandButton.Position = UDim2.new(0.5, -140, 0, 40)
-saveSandButton.BackgroundColor3 = Color3.fromRGB(70, 70, 70); saveSandButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-saveSandButton.Text = "Lưu Vị Trí Cát"; saveSandButton.Font = Enum.Font.SourceSans; saveSandButton.TextSize = 16
-saveSandButton.Parent = mainFrame
-local saveWaterButton = Instance.new("TextButton")
-saveWaterButton.Size = UDim2.new(0, 280, 0, 30); saveWaterButton.Position = UDim2.new(0.5, -140, 0, 80)
-saveWaterButton.BackgroundColor3 = Color3.fromRGB(70, 70, 70); saveWaterButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-saveWaterButton.Text = "Lưu Vị Trí Nước"; saveWaterButton.Font = Enum.Font.SourceSans; saveWaterButton.TextSize = 16
-saveWaterButton.Parent = mainFrame
-local toggleButton = Instance.new("TextButton")
-toggleButton.Size = UDim2.new(0, 280, 0, 40); toggleButton.Position = UDim2.new(0.5, -140, 0, 120)
-toggleButton.BackgroundColor3 = Color3.fromRGB(85, 170, 85); toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-toggleButton.Text = "Bắt đầu Farm"; toggleButton.Font = Enum.Font.SourceSansBold; toggleButton.TextSize = 20
-toggleButton.Parent = mainFrame
-local statusLabel = Instance.new("TextLabel")
-statusLabel.Size = UDim2.new(1, 0, 0, 20); statusLabel.Position = UDim2.new(0, 0, 1, -20)
-statusLabel.BackgroundColor3 = Color3.fromRGB(55, 55, 55); statusLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-statusLabel.Text = "Status: Idle"; statusLabel.Font = Enum.Font.SourceSans; statusLabel.TextSize = 14
-statusLabel.Parent = mainFrame
 
+local startRecordButton = Instance.new("TextButton")
+startRecordButton.Size = UDim2.new(0.45, 0, 0, 40); startRecordButton.Position = UDim2.new(0.03, 0, 0, 40)
+startRecordButton.BackgroundColor3 = Color3.fromRGB(70, 130, 200); startRecordButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+startRecordButton.Text = "Bắt đầu Ghi"; startRecordButton.Font = Enum.Font.SourceSans; startRecordButton.TextSize = 14
+startRecordButton.Parent = mainFrame
+
+local stopRecordButton = Instance.new("TextButton")
+stopRecordButton.Size = UDim2.new(0.45, 0, 0, 40); stopRecordButton.Position = UDim2.new(0.52, 0, 0, 40)
+stopRecordButton.BackgroundColor3 = Color3.fromRGB(200, 70, 70); stopRecordButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+stopRecordButton.Text = "Dừng Ghi"; stopRecordButton.Font = Enum.Font.SourceSans; stopRecordButton.TextSize = 14
+stopRecordButton.Parent = mainFrame
+
+local startPlaybackButton = Instance.new("TextButton")
+startPlaybackButton.Size = UDim2.new(0.45, 0, 0, 40); startPlaybackButton.Position = UDim2.new(0.03, 0, 0, 90)
+startPlaybackButton.BackgroundColor3 = Color3.fromRGB(85, 170, 85); startPlaybackButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+startPlaybackButton.Text = "Bắt đầu Lặp"; startPlaybackButton.Font = Enum.Font.SourceSans; startPlaybackButton.TextSize = 14
+startPlaybackButton.Parent = mainFrame
+
+local stopPlaybackButton = Instance.new("TextButton")
+stopPlaybackButton.Size = UDim2.new(0.45, 0, 0, 40); stopPlaybackButton.Position = UDim2.new(0.52, 0, 0, 90)
+stopPlaybackButton.BackgroundColor3 = Color3.fromRGB(200, 70, 70); stopPlaybackButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+stopPlaybackButton.Text = "Dừng Lặp"; stopPlaybackButton.Font = Enum.Font.SourceSans; stopPlaybackButton.TextSize = 14
+stopPlaybackButton.Parent = mainFrame
+
+local statusLabel = Instance.new("TextLabel")
+statusLabel.Size = UDim2.new(1, 0, 0, 30); statusLabel.Position = UDim2.new(0, 0, 1, -30)
+statusLabel.BackgroundColor3 = Color3.fromRGB(55, 55, 55); statusLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+statusLabel.Text = "Status: Idle"; statusLabel.Font = Enum.Font.SourceSans; statusLabel.TextSize = 16
+statusLabel.Parent = mainFrame
 
 -- =======================================================================
 -- == PHẦN 3: CÁC HÀM LÕI (CORE FUNCTIONS)                              ==
--- == -> Đã nâng cấp hàm nhấn nút với nhiều phương pháp.                 ==
 -- =======================================================================
 
--- [NÂNG CẤP] Hàm "Siêu Click"
+-- Hàm "Siêu Click" từ script trước
 function tryClicking(buttonObject)
-    -- Thử phương pháp 1: Chạm (Tốt nhất cho di động)
-    if firetouch then
-        print("Attempting click with: firetouch")
-        firetouch(buttonObject)
-        return
-    end
-
-    -- Thử phương pháp 2: Click (Tên hàm phổ biến khác)
-    if fireclick then
-        print("Attempting click with: fireclick")
-        fireclick(buttonObject)
-        return
-    end
-
-    -- Thử phương pháp 3: Tín hiệu MouseButton1Click (Cách cũ)
-    if firesignal then
-        print("Attempting click with: firesignal")
-        firesignal(buttonObject.MouseButton1Click)
-        return
-    end
-
-    print("Error: No supported click function (firetouch, fireclick, firesignal) was found.")
-    statusLabel.Text = "Error: Executor not supported!"
-    isFarming = false -- Dừng farm nếu không có hàm click
+    if firetouch then firetouch(buttonObject); return end
+    if fireclick then fireclick(buttonObject); return end
+    if firesignal then firesignal(buttonObject.MouseButton1Click); return end
+    print("Error: No supported click function found.")
 end
 
--- Hàm dịch chuyển nhân vật
-function teleport(position)
-    if position and humanoidRootPart then
-        humanoidRootPart.CFrame = position
+-- Hàm tìm lại một đối tượng từ đường dẫn đã lưu
+function findObjectByPath(path)
+    local current = game
+    for _, name in ipairs(path:split(".")) do
+        current = current:FindFirstChild(name)
+        if not current then return nil end
     end
+    return current
 end
 
--- Hàm tìm nút, giờ sẽ sử dụng hàm "Siêu Click"
-function findAndClickButtonByText(buttonText)
-    for _, obj in ipairs(playerGui:GetDescendants()) do
-        if (obj:IsA("TextButton") or obj:IsA("ImageButton")) and (obj:FindFirstChildOfClass("TextLabel") or obj:IsA("TextButton")) then
-            local textToShow = obj:IsA("TextButton") and obj.Text or obj:FindFirstChildOfClass("TextLabel").Text
-            if textToShow:lower():match(buttonText:lower()) then
-                statusLabel.Text = "Status: Clicking '"..textToShow.."'..."
-                -- Gọi hàm siêu click mới
-                tryClicking(obj)
-                return true
+-- Chế độ lặp lại
+function startPlayback()
+    isPlaying = true
+    statusLabel.Text = "Status: Playing back..."
+    
+    while isPlaying do
+        for _, action in ipairs(recordedActions) do
+            if not isPlaying then break end
+
+            if action.type == "wait" then
+                statusLabel.Text = "Status: Waiting for "..string.format("%.1f", action.duration).."s"
+                wait(action.duration)
+            elseif action.type == "click" then
+                local targetButton = findObjectByPath(action.target)
+                if targetButton then
+                    statusLabel.Text = "Status: Clicking "..targetButton.Name
+                    tryClicking(targetButton)
+                else
+                    statusLabel.Text = "Error: Can't find "..action.target
+                    wait(1)
+                end
             end
         end
+        statusLabel.Text = "Status: Sequence looped."
+        wait(1) -- Đợi 1 giây trước khi lặp lại toàn bộ chuỗi
     end
-    statusLabel.Text = "Error: Can't find button '"..buttonText.."'!"
-    return false
 end
 
--- =======================================================================
--- == PHẦN 4: VÒNG LẶP CHÍNH (MAIN LOOP)                                 ==
--- =======================================================================
--- (Phần này không thay đổi)
-function startFarming()
-    while isFarming do
-        if not sandPosition or not waterPosition then
-            statusLabel.Text = "Error: Please save both positions!"; isFarming = false
-            toggleButton.Text = "Bắt đầu Farm"; toggleButton.BackgroundColor3 = Color3.fromRGB(85, 170, 85)
-            break
+-- Chế độ ghi
+function startRecording()
+    if isRecording then return end
+    isRecording = true
+    recordedActions = {} -- Xóa bản ghi cũ
+    statusLabel.Text = "Status: Recording... (Click a button)"
+    lastActionTime = tick()
+
+    -- Bật "gián điệp" theo dõi input
+    inputConnection = UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
+        -- Chỉ ghi lại nếu đó là một cú chạm và không phải là đang gõ chữ
+        if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) and not gameProcessedEvent then
+            local target = input.Position
+            local guiObject = playerGui:GetGuiObjectsAtPosition(target.X, target.Y)[1]
+
+            -- Kiểm tra xem đối tượng có phải là một nút bấm không
+            if guiObject and (guiObject:IsA("TextButton") or guiObject:IsA("ImageButton")) then
+                -- Tính toán thời gian chờ kể từ hành động cuối cùng
+                local currentTime = tick()
+                local waitDuration = currentTime - lastActionTime
+                lastActionTime = currentTime
+                
+                -- Ghi lại hành động chờ và hành động click
+                table.insert(recordedActions, {type="wait", duration=waitDuration})
+                table.insert(recordedActions, {type="click", target=guiObject:GetFullName()})
+                
+                statusLabel.Text = "Recorded click on: "..guiObject.Name
+                print("Recorded wait: "..waitDuration.."s, Recorded click: "..guiObject:GetFullName())
+            end
         end
-        statusLabel.Text = "Status: Moving to sand position..."
-        teleport(sandPosition)
-        wait(CONFIG.WAIT_TIME_AFTER_TELEPORT)
-        findAndClickButtonByText(CONFIG.DIG_BUTTON_TEXT)
-        wait(CONFIG.WAIT_TIME_AFTER_ACTION)
-        statusLabel.Text = "Status: Moving to water position..."
-        teleport(waterPosition)
-        wait(CONFIG.WAIT_TIME_AFTER_TELEPORT)
-        findAndClickButtonByText(CONFIG.PAN_BUTTON_TEXT)
-        wait(CONFIG.WAIT_TIME_AFTER_ACTION)
-        statusLabel.Text = "Status: Round complete!"
-        wait(1)
+    end)
+end
+
+function stopRecording()
+    if not isRecording then return end
+    isRecording = false
+    statusLabel.Text = "Status: Recording stopped. "..#recordedActions.." actions saved."
+    -- Ngắt kết nối "gián điệp"
+    if inputConnection then
+        inputConnection:Disconnect()
+        inputConnection = nil
     end
 end
 
 -- =======================================================================
--- == PHẦN 5: KHỞI TẠO & KẾT NỐI SỰ KIỆN (INITIALIZATION)                ==
+-- == PHẦN 4: KẾT NỐI SỰ KIỆN (EVENT CONNECTIONS)                        ==
 -- =======================================================================
--- (Phần này không thay đổi)
-saveSandButton.MouseButton1Click:Connect(function()
-    sandPosition = humanoidRootPart.CFrame; statusLabel.Text = "Sand position saved!"
-end)
-saveWaterButton.MouseButton1Click:Connect(function()
-    waterPosition = humanoidRootPart.CFrame; statusLabel.Text = "Water position saved!"
-end)
-toggleButton.MouseButton1Click:Connect(function()
-    isFarming = not isFarming
-    if isFarming then
-        toggleButton.Text = "Dừng Farm"
-        toggleButton.BackgroundColor3 = Color3.fromRGB(170, 85, 85)
-        startFarming()
-    else
-        statusLabel.Text = "Status: Stopped by user."
-        toggleButton.Text = "Bắt đầu Farm"
-        toggleButton.BackgroundColor3 = Color3.fromRGB(85, 170, 85)
+
+startRecordButton.MouseButton1Click:Connect(startRecording)
+stopRecordButton.MouseButton1Click:Connect(stopRecording)
+
+startPlaybackButton.MouseButton1Click:Connect(function()
+    if #recordedActions == 0 then
+        statusLabel.Text = "Status: Nothing to play!"
+        return
+    end
+    if not isPlaying then
+        startPlayback()
     end
 end)
-statusLabel.Text = "Status: Ready. Please save positions."
+
+stopPlaybackButton.MouseButton1Click:Connect(function()
+    if isPlaying then
+        isPlaying = false
+        statusLabel.Text = "Status: Playback stopped."
+    end
+end)
+
