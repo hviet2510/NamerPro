@@ -1,104 +1,159 @@
--- =======================================================
--- == Script Console Di động cho điện thoại             ==
--- =======================================================
--- Chạy script này để tạo một cửa sổ hiển thị output
--- trên màn hình, thay thế cho Developer Console (F9).
--- =======================================================
+-- =======================================================================
+-- == Script Macro Auto Farm - Phiên bản có cấu trúc rõ ràng            ==
+-- =======================================================================
 
--- Nếu đã có console rồi thì không tạo nữa
-if game.Players.LocalPlayer.PlayerGui:FindFirstChild("MobileConsoleGui") then return end
+-- =======================================================================
+-- == PHẦN 1: CẤU HÌNH (CONFIGURATION)                                   ==
+-- == -> Bạn chỉ cần chỉnh sửa các thông số trong phần này khi cần.       ==
+-- =======================================================================
 
--- Tạo GUI
-local ConsoleGui = Instance.new("ScreenGui")
-ConsoleGui.Name = "MobileConsoleGui"
-ConsoleGui.Parent = game.Players.LocalPlayer.PlayerGui
-ConsoleGui.ResetOnSpawn = false
-
-local MainFrame = Instance.new("Frame")
-MainFrame.Name = "MainFrame"
-MainFrame.Size = UDim2.new(0.6, 0, 0.4, 0) -- 60% chiều rộng, 40% chiều cao
-MainFrame.Position = UDim2.new(0.2, 0, 0.2, 0)
-MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-MainFrame.BorderColor3 = Color3.fromRGB(100, 100, 100)
-MainFrame.Draggable = true
-MainFrame.Active = true
-MainFrame.Parent = ConsoleGui
-
-local Header = Instance.new("Frame")
-Header.Name = "Header"
-Header.Size = UDim2.new(1, 0, 0, 25)
-Header.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-Header.Parent = MainFrame
-
-local Title = Instance.new("TextLabel")
-Title.Name = "Title"
-Title.Size = UDim2.new(1, -60, 1, 0)
-Title.Text = "Mobile Console"
-Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-Title.Font = Enum.Font.SourceSansBold
-Title.TextXAlignment = Enum.TextXAlignment.Left
-Title.Position = UDim2.new(0, 10, 0, 0)
-Title.Parent = Header
-
-local ClearButton = Instance.new("TextButton")
-ClearButton.Name = "ClearButton"
-ClearButton.Size = UDim2.new(0, 50, 0, 20)
-ClearButton.Position = UDim2.new(1, -55, 0.5, -10)
-ClearButton.Text = "Clear"
-ClearButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
-ClearButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-ClearButton.Parent = Header
-
-local ScrollingFrame = Instance.new("ScrollingFrame")
-ScrollingFrame.Name = "ScrollingFrame"
-ScrollingFrame.Size = UDim2.new(1, 0, 1, -25)
-ScrollingFrame.Position = UDim2.new(0, 0, 0, 25)
-ScrollingFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
-ScrollingFrame.ScrollBarImageColor3 = Color3.fromRGB(100, 100, 100)
-ScrollingFrame.Parent = MainFrame
-
-local UIListLayout = Instance.new("UIListLayout")
-UIListLayout.Parent = ScrollingFrame
-UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-UIListLayout.Padding = UDim.new(0, 2)
-
--- Hàm để thêm một dòng log vào console
-local function addLog(message, color)
-    local logLabel = Instance.new("TextLabel")
-    logLabel.Text = tostring(message)
-    logLabel.TextColor3 = color or Color3.fromRGB(255, 255, 255)
-    logLabel.Font = Enum.Font.Code
-    logLabel.TextSize = 14
-    logLabel.TextXAlignment = Enum.TextXAlignment.Left
-    logLabel.TextWrapped = true
-    logLabel.Size = UDim2.new(1, -10, 0, 0)
-    logLabel.AutomaticSize = Enum.AutomaticSize.Y
-    logLabel.Parent = ScrollingFrame
+local CONFIG = {
+    -- Tên các nút trong game (phải chính xác tuyệt đối, không phân biệt hoa/thường)
+    DIG_BUTTON_TEXT = "Dig",
+    PAN_BUTTON_TEXT = "Pan",
     
-    -- Tự động cuộn xuống dưới
-    ScrollingFrame.CanvasPosition = Vector2.new(0, UIListLayout.AbsoluteContentSize.Y)
+    -- Thời gian chờ sau mỗi hành động (tính bằng giây)
+    WAIT_TIME_AFTER_ACTION = 5,
+    WAIT_TIME_AFTER_TELEPORT = 1
+}
+
+-- =======================================================================
+-- == PHẦN 2: GIAO DIỆN NGƯỜI DÙNG (GUI)                                 ==
+-- == -> Phần này tạo ra cửa sổ điều khiển. Không cần chỉnh sửa.         ==
+-- =======================================================================
+
+-- Các biến toàn cục cho script
+local player = game:GetService("Players").LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+local sandPosition = nil
+local waterPosition = nil
+local isFarming = false
+
+-- Code tạo giao diện
+local screenGui = Instance.new("ScreenGui")
+screenGui.Parent = playerGui; screenGui.ResetOnSpawn = false
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 300, 0, 200); mainFrame.Position = UDim2.new(0.5, -150, 0.5, -100)
+mainFrame.BackgroundColor3 = Color3.fromRGB(45, 45, 45); mainFrame.BorderColor3 = Color3.fromRGB(25, 25, 25)
+mainFrame.Draggable = true; mainFrame.Active = true; mainFrame.Parent = screenGui
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Size = UDim2.new(1, 0, 0, 30); titleLabel.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+titleLabel.Text = "Auto Farm Macro"; titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+titleLabel.Font = Enum.Font.SourceSansBold; titleLabel.TextSize = 18; titleLabel.Parent = mainFrame
+local saveSandButton = Instance.new("TextButton")
+saveSandButton.Size = UDim2.new(0, 280, 0, 30); saveSandButton.Position = UDim2.new(0.5, -140, 0, 40)
+saveSandButton.BackgroundColor3 = Color3.fromRGB(70, 70, 70); saveSandButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+saveSandButton.Text = "Lưu Vị Trí Cát"; saveSandButton.Font = Enum.Font.SourceSans; saveSandButton.TextSize = 16
+saveSandButton.Parent = mainFrame
+local saveWaterButton = Instance.new("TextButton")
+saveWaterButton.Size = UDim2.new(0, 280, 0, 30); saveWaterButton.Position = UDim2.new(0.5, -140, 0, 80)
+saveWaterButton.BackgroundColor3 = Color3.fromRGB(70, 70, 70); saveWaterButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+saveWaterButton.Text = "Lưu Vị Trí Nước"; saveWaterButton.Font = Enum.Font.SourceSans; saveWaterButton.TextSize = 16
+saveWaterButton.Parent = mainFrame
+local toggleButton = Instance.new("TextButton")
+toggleButton.Size = UDim2.new(0, 280, 0, 40); toggleButton.Position = UDim2.new(0.5, -140, 0, 120)
+toggleButton.BackgroundColor3 = Color3.fromRGB(85, 170, 85); toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+toggleButton.Text = "Bắt đầu Farm"; toggleButton.Font = Enum.Font.SourceSansBold; toggleButton.TextSize = 20
+toggleButton.Parent = mainFrame
+local statusLabel = Instance.new("TextLabel")
+statusLabel.Size = UDim2.new(1, 0, 0, 20); statusLabel.Position = UDim2.new(0, 0, 1, -20)
+statusLabel.BackgroundColor3 = Color3.fromRGB(55, 55, 55); statusLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+statusLabel.Text = "Status: Idle"; statusLabel.Font = Enum.Font.SourceSans; statusLabel.TextSize = 14
+statusLabel.Parent = mainFrame
+
+-- =======================================================================
+-- == PHẦN 3: CÁC HÀM LÕI (CORE FUNCTIONS)                              ==
+-- == -> Chứa các "công cụ" để script hoạt động.                         ==
+-- == -> Nếu lỗi nhấn nút, chỉ cần sửa hàm findAndClickButtonByText.      ==
+-- =======================================================================
+
+-- Hàm dịch chuyển nhân vật
+function teleport(position)
+    if position and humanoidRootPart then
+        humanoidRootPart.CFrame = position
+    end
 end
 
--- Sự kiện khi bấm nút Clear
-ClearButton.MouseButton1Click:Connect(function()
-    for _, child in pairs(ScrollingFrame:GetChildren()) do
-        if child:IsA("TextLabel") then
-            child:Destroy()
+-- Hàm tìm và nhấn nút dựa trên văn bản
+function findAndClickButtonByText(buttonText)
+    for _, obj in ipairs(playerGui:GetDescendants()) do
+        if (obj:IsA("TextButton") or obj:IsA("ImageButton")) and (obj:FindFirstChildOfClass("TextLabel") or obj:IsA("TextButton")) then
+            local textToShow = obj:IsA("TextButton") and obj.Text or obj:FindFirstChildOfClass("TextLabel").Text
+            if textToShow:lower():match(buttonText:lower()) then
+                statusLabel.Text = "Status: Clicking '"..textToShow.."'..."
+                firesignal(obj.MouseButton1Click)
+                return true
+            end
         end
+    end
+    statusLabel.Text = "Error: Can't find button '"..buttonText.."'!"
+    return false
+end
+
+-- =======================================================================
+-- == PHẦN 4: VÒNG LẶP CHÍNH (MAIN LOOP)                                 ==
+-- == -> Nơi quy trình farm được thực hiện.                              ==
+-- == -> Nếu muốn thay đổi thứ tự, chỉ cần sửa trong vòng lặp while.     ==
+-- =======================================================================
+
+function startFarming()
+    while isFarming do
+        if not sandPosition or not waterPosition then
+            statusLabel.Text = "Error: Please save both positions!"; isFarming = false
+            toggleButton.Text = "Bắt đầu Farm"; toggleButton.BackgroundColor3 = Color3.fromRGB(85, 170, 85)
+            break
+        end
+
+        -- Bước 1: Đến chỗ cát
+        statusLabel.Text = "Status: Moving to sand position..."
+        teleport(sandPosition)
+        wait(CONFIG.WAIT_TIME_AFTER_TELEPORT)
+        
+        -- Bước 2: Nhấn nút đào
+        findAndClickButtonByText(CONFIG.DIG_BUTTON_TEXT)
+        wait(CONFIG.WAIT_TIME_AFTER_ACTION)
+
+        -- Bước 3: Đến chỗ nước
+        statusLabel.Text = "Status: Moving to water position..."
+        teleport(waterPosition)
+        wait(CONFIG.WAIT_TIME_AFTER_TELEPORT)
+        
+        -- Bước 4: Nhấn nút đãi
+        findAndClickButtonByText(CONFIG.PAN_BUTTON_TEXT)
+        wait(CONFIG.WAIT_TIME_AFTER_ACTION)
+        
+        statusLabel.Text = "Status: Round complete!"
+        wait(1)
+    end
+end
+
+-- =======================================================================
+-- == PHẦN 5: KHỞI TẠO & KẾT NỐI SỰ KIỆN (INITIALIZATION)                ==
+-- == -> Gắn các chức năng vào nút bấm. Không cần chỉnh sửa.             ==
+-- =======================================================================
+
+saveSandButton.MouseButton1Click:Connect(function()
+    sandPosition = humanoidRootPart.CFrame; statusLabel.Text = "Sand position saved!"
+end)
+
+saveWaterButton.MouseButton1Click:Connect(function()
+    waterPosition = humanoidRootPart.CFrame; statusLabel.Text = "Water position saved!"
+end)
+
+toggleButton.MouseButton1Click:Connect(function()
+    isFarming = not isFarming
+    if isFarming then
+        toggleButton.Text = "Dừng Farm"
+        toggleButton.BackgroundColor3 = Color3.fromRGB(170, 85, 85)
+        startFarming()
+    else
+        statusLabel.Text = "Status: Stopped by user."
+        toggleButton.Text = "Bắt đầu Farm"
+        toggleButton.BackgroundColor3 = Color3.fromRGB(85, 170, 85)
     end
 end)
 
--- Ghi đè hàm print gốc để hiển thị trên console GUI
-local oldPrint = print
-_G.print = function(...)
-    local args = {...}
-    local output = ""
-    for i, v in pairs(args) do
-        output = output .. tostring(v) .. "\t"
-    end
-    addLog(output)
-    return oldPrint(...) -- Vẫn in ra console gốc nếu có
-end
-
-addLog("Console di động đã sẵn sàng!", Color3.fromRGB(0, 255, 0))
+-- Thông báo script đã sẵn sàng
+statusLabel.Text = "Status: Ready. Please save positions."
