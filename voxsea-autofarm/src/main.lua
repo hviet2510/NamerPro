@@ -1,56 +1,58 @@
--- =======================================================
--- == Script Gián điệp Toàn năng (Universal Remote Spy)  ==
--- =======================================================
--- Script này sẽ quét toàn bộ game để tìm và theo dõi
--- tất cả các RemoteEvent. Tương thích với nhiều executor hơn.
--- =======================================================
+-- ===================================================================
+-- == Script Gián điệp Nâng cao (Advanced Universal Spy)             ==
+-- ===================================================================
+-- Chức năng: Quét toàn bộ game để tìm và theo dõi cả hai loại tín hiệu
+-- là RemoteEvent:FireServer và RemoteFunction:InvokeServer.
+-- ===================================================================
 
-print("Bắt đầu quét RemoteEvent toàn bộ game...", Color3.fromRGB(255, 255, 0))
+print("Bắt đầu quét nâng cao...", Color3.fromRGB(255, 255, 0))
 
-local remoteCount = 0
+local eventCount = 0
+local functionCount = 0
 
--- Hàm đệ quy để quét tất cả các đối tượng con
-local function scanForRemotes(parent)
-    -- Kiểm tra xem đối tượng có phải là RemoteEvent không
+local function scanInstance(parent)
+    -- Theo dõi RemoteEvent
     if parent:IsA("RemoteEvent") then
-        remoteCount = remoteCount + 1
-        
-        -- Lấy hàm FireServer gốc
+        eventCount = eventCount + 1
         local oldFireServer = parent.FireServer
-        
-        -- Thay thế nó bằng hàm của chúng ta (hook)
         parent.FireServer = newcclosure(function(self, ...)
+            print("---[EVENT FIRED - FireServer]---")
+            print("Tên: " .. self.Name .. " (" .. self:GetFullName() .. ")")
             local args = {...}
-            
-            print("================ KÍCH HOẠT REMOTE ================")
-            print("--> Tên Remote: " .. self.Name)
-            print("--> Vị trí: " .. self:GetFullName())
-            
             if #args > 0 then
-                print("--> Với các đối số:")
-                for i, v in pairs(args) do
-                    print("    [" .. tostring(i) .. "]: " .. tostring(v))
-                end
-            else
-                print("--> Không có đối số.")
+                print("Đối số:")
+                for i, v in pairs(args) do print("  ["..i.."]: " .. tostring(v)) end
             end
-            print("=================================================\n")
-            
-            -- Gọi lại hàm gốc để game không bị lỗi
             return oldFireServer(self, ...)
         end)
     end
     
-    -- Lặp qua tất cả các đối tượng con và tiếp tục quét
+    -- Theo dõi RemoteFunction
+    if parent:IsA("RemoteFunction") then
+        functionCount = functionCount + 1
+        local oldInvokeServer = parent.InvokeServer
+        parent.InvokeServer = newcclosure(function(self, ...)
+            print("###[FUNCTION INVOKED - InvokeServer]###")
+            print("Tên: " .. self.Name .. " (" .. self:GetFullName() .. ")")
+            local args = {...}
+            if #args > 0 then
+                print("Đối số:")
+                for i, v in pairs(args) do print("  ["..i.."]: " .. tostring(v)) end
+            end
+            return oldInvokeServer(self, ...)
+        end)
+    end
+    
+    -- Tiếp tục quét các đối tượng con
     for _, child in ipairs(parent:GetChildren()) do
-        pcall(scanForRemotes, child) -- Dùng pcall để tránh lỗi khi không có quyền truy cập
+        pcall(scanInstance, child)
     end
 end
 
--- Bắt đầu quét từ các thư mục chính
-scanForRemotes(game:GetService("ReplicatedStorage"))
-scanForRemotes(game:GetService("Workspace"))
-scanForRemotes(game.Players.LocalPlayer:WaitForChild("PlayerGui"))
+-- Bắt đầu quét từ các vị trí chính
+scanInstance(game:GetService("ReplicatedStorage"))
+scanInstance(game:GetService("Workspace"))
+scanInstance(game.Players.LocalPlayer:WaitForChild("PlayerGui"))
 
-print("Hoàn tất! Đã gắn gián điệp vào " .. remoteCount .. " RemoteEvents.", Color3.fromRGB(0, 255, 0))
-print("Bây giờ hãy thực hiện một hành động trong game.")
+print("Hoàn tất! Đã gắn gián điệp vào " .. eventCount .. " Events và " .. functionCount .. " Functions.", Color3.fromRGB(0, 255, 0))
+print("Bây giờ hãy thực hiện hành động trong game. Hy vọng lần này sẽ thành công!")
