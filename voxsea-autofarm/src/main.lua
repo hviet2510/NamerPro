@@ -1,139 +1,216 @@
--- =======================================================================
--- == Script Macro Recorder - Phiên bản Cao cấp v2.1 (FIXED RECORDING)   ==
--- =======================================================================
+--// Services
+local Players = game:GetService("Players")
+local StarterGui = game:GetService("StarterGui")
 
--- =======================================================================
--- == PHẦN 1: KHỞI TẠO VÀ CÁC BIẾN TRẠNG THÁI                            ==
--- =======================================================================
+local localPlayer = Players.LocalPlayer
 
-local UserInputService = game:GetService("UserInputService")
-local player = game:GetService("Players").LocalPlayer
-local playerGui = player:WaitForChild("PlayerGui")
-local character = player.Character or player.CharacterAdded:Wait()
-local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+--// Notify function
+local function Notify(title, text, duration)
+    StarterGui:SetCore("SendNotification", {
+        Title = title;
+        Text = text;
+        Duration = duration or 3;
+    })
+end
 
--- "Cuốn sổ" để ghi lại các hành động
-local recordedActions = {}
-local isRecording = false
-local isPlaying = false
-local lastActionTime = 0
-local inputConnection = nil
-
--- Biến lưu vị trí teleport
-local savedSandPos = nil
-local savedWaterPos = nil
-
--- =======================================================================
--- == PHẦN 2: GIAO DIỆN NGƯỜI DÙNG (GUI) NÂNG CẤP                         ==
--- =======================================================================
-
-local screenGui = Instance.new("ScreenGui")
-screenGui.Parent = playerGui; screenGui.ResetOnSpawn = false
-local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 220, 0, 230); mainFrame.Position = UDim2.new(0.5, -110, 0.5, -115)
-mainFrame.BackgroundColor3 = Color3.fromRGB(45, 45, 45); mainFrame.BorderColor3 = Color3.fromRGB(25, 25, 25)
-mainFrame.Draggable = true; mainFrame.Active = true; mainFrame.Parent = screenGui
-local titleLabel = Instance.new("TextLabel")
-titleLabel.Size = UDim2.new(1, 0, 0, 30); titleLabel.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-titleLabel.Text = "Premium Macro Recorder"; titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-titleLabel.Font = Enum.Font.SourceSansBold; titleLabel.TextSize = 18; titleLabel.Parent = mainFrame
-local recordSandPosButton = Instance.new("TextButton")
-recordSandPosButton.Size = UDim2.new(0.45, 0, 0, 40); recordSandPosButton.Position = UDim2.new(0.03, 0, 0, 40)
-recordSandPosButton.BackgroundColor3 = Color3.fromRGB(230, 126, 34); recordSandPosButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-recordSandPosButton.Text = "Ghi Vị Trí Cát"; recordSandPosButton.Font = Enum.Font.SourceSans; recordSandPosButton.TextSize = 14
-recordSandPosButton.Parent = mainFrame
-local recordWaterPosButton = Instance.new("TextButton")
-recordWaterPosButton.Size = UDim2.new(0.45, 0, 0, 40); recordWaterPosButton.Position = UDim2.new(0.52, 0, 0, 40)
-recordWaterPosButton.BackgroundColor3 = Color3.fromRGB(52, 152, 219); recordWaterPosButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-recordWaterPosButton.Text = "Ghi Vị Trí Nước"; recordWaterPosButton.Font = Enum.Font.SourceSans; recordWaterPosButton.TextSize = 14
-recordWaterPosButton.Parent = mainFrame
-local startRecordButton = Instance.new("TextButton")
-startRecordButton.Size = UDim2.new(0.45, 0, 0, 40); startRecordButton.Position = UDim2.new(0.03, 0, 0, 90)
-startRecordButton.BackgroundColor3 = Color3.fromRGB(70, 130, 200); startRecordButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-startRecordButton.Text = "Bắt đầu Ghi"; startRecordButton.Font = Enum.Font.SourceSans; startRecordButton.TextSize = 14
-startRecordButton.Parent = mainFrame
-local stopRecordButton = Instance.new("TextButton")
-stopRecordButton.Size = UDim2.new(0.45, 0, 0, 40); stopRecordButton.Position = UDim2.new(0.52, 0, 0, 90)
-stopRecordButton.BackgroundColor3 = Color3.fromRGB(200, 70, 70); stopRecordButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-stopRecordButton.Text = "Dừng Ghi"; stopRecordButton.Font = Enum.Font.SourceSans; stopRecordButton.TextSize = 14
-stopRecordButton.Parent = mainFrame
-local startPlaybackButton = Instance.new("TextButton")
-startPlaybackButton.Size = UDim2.new(0.45, 0, 0, 40); startPlaybackButton.Position = UDim2.new(0.03, 0, 0, 140)
-startPlaybackButton.BackgroundColor3 = Color3.fromRGB(85, 170, 85); startPlaybackButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-startPlaybackButton.Text = "Bắt đầu Lặp"; startPlaybackButton.Font = Enum.Font.SourceSans; startPlaybackButton.TextSize = 14
-startPlaybackButton.Parent = mainFrame
-local stopPlaybackButton = Instance.new("TextButton")
-stopPlaybackButton.Size = UDim2.new(0.45, 0, 0, 40); stopPlaybackButton.Position = UDim2.new(0.52, 0, 0, 140)
-stopPlaybackButton.BackgroundColor3 = Color3.fromRGB(200, 70, 70); stopPlaybackButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-stopPlaybackButton.Text = "Dừng Lặp"; stopPlaybackButton.Font = Enum.Font.SourceSans; stopPlaybackButton.TextSize = 14
-stopPlaybackButton.Parent = mainFrame
-local statusLabel = Instance.new("TextLabel")
-statusLabel.Size = UDim2.new(1, 0, 0, 30); statusLabel.Position = UDim2.new(0, 0, 1, -30)
-statusLabel.BackgroundColor3 = Color3.fromRGB(55, 55, 55); statusLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-statusLabel.Text = "Status: Idle"; statusLabel.Font = Enum.Font.SourceSans; statusLabel.TextSize = 16
-statusLabel.Parent = mainFrame
-
--- =======================================================================
--- == PHẦN 3: CÁC HÀM LÕI (CORE FUNCTIONS)                              ==
--- =======================================================================
-
-function tryClicking(buttonObject) if firetouch then firetouch(buttonObject); return end; if fireclick then fireclick(buttonObject); return end; if firesignal then firesignal(buttonObject.MouseButton1Click); return end; print("Error: No supported click function found.") end
-function findObjectByPath(path) local current = game; for _, name in ipairs(path:split(".")) do current = current:FindFirstChild(name); if not current then return nil end end; return current end
-
-function startPlayback()
-    isPlaying = true; statusLabel.Text = "Status: Playing back..."
-    while isPlaying do
-        for _, action in ipairs(recordedActions) do
-            if not isPlaying then break end
-            if action.type == "wait" then statusLabel.Text = "Status: Waiting for "..string.format("%.1f", action.duration).."s"; wait(action.duration)
-            elseif action.type == "click" then local targetButton = findObjectByPath(action.target); if targetButton then statusLabel.Text = "Status: Clicking "..targetButton.Name; tryClicking(targetButton) else statusLabel.Text = "Error: Can't find "..action.target; wait(1) end
-            elseif action.type == "teleport_sand" then if savedSandPos then statusLabel.Text = "Status: Teleporting to Sand"; humanoidRootPart.CFrame = savedSandPos else statusLabel.Text = "Error: Sand pos not saved!" end
-            elseif action.type == "teleport_water" then if savedWaterPos then statusLabel.Text = "Status: Teleporting to Water"; humanoidRootPart.CFrame = savedWaterPos else statusLabel.Text = "Error: Water pos not saved!" end
-            end
-        end
-        statusLabel.Text = "Status: Sequence looped."; wait(1)
+--// Hàm tạo kiếm vĩnh viễn (dao Rambo)
+local function createSword()
+    if localPlayer.Backpack:FindFirstChild("CoolSword") or (localPlayer.Character and localPlayer.Character:FindFirstChild("CoolSword")) then
+        return
     end
-end
 
-function recordAction(action)
-    if not isRecording then return end
-    local currentTime = tick(); local waitDuration = currentTime - lastActionTime; lastActionTime = currentTime
-    table.insert(recordedActions, {type="wait", duration=waitDuration}); table.insert(recordedActions, action)
-    statusLabel.Text = "Recorded action: "..action.type
-end
+    local sword = Instance.new("Tool")
+    sword.RequiresHandle = true
+    sword.Name = "CoolSword"
+    sword.Parent = localPlayer.Backpack
 
-function startRecording()
-    if isRecording then return end
-    isRecording = true; recordedActions = {}; statusLabel.Text = "Status: Recording..."; lastActionTime = tick()
-    inputConnection = UserInputService.InputBegan:Connect(function(input, gpe)
-        -- [ĐÃ SỬA LỖI] Bỏ điều kiện 'and not gpe' để ghi lại tất cả các cú click lên GUI
-        if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) then
-            -- Thay vì dùng 'input.Position', chúng ta sẽ dùng hàm mới để tìm đối tượng GUI một cách đáng tin cậy hơn
-            local objects = playerGui:GetGuiObjectsAtPosition(input.Position.X, input.Position.Y)
-            if #objects > 0 then
-                local guiObject = objects[1]
-                if guiObject and (guiObject:IsA("TextButton") or guiObject:IsA("ImageButton")) then 
-                    recordAction({type="click", target=guiObject:GetFullName()}) 
-                end
-            end
+    local handle = Instance.new("Part")
+    handle.Name = "Handle"
+    handle.Size = Vector3.new(1, 4, 1)
+    handle.CanCollide = false
+    handle.Parent = sword
+
+    local mesh = Instance.new("SpecialMesh", handle)
+    mesh.MeshType = Enum.MeshType.FileMesh
+    mesh.MeshId = "rbxassetid://121946387" -- Rambo Knife mesh
+    mesh.TextureId = "rbxassetid://121946383" -- Rambo Knife texture
+    mesh.Scale = Vector3.new(1.5, 1.5, 1.5)
+
+    -- Damage lên NPC
+    handle.Touched:Connect(function(otherPart)
+        local npc = otherPart.Parent
+        if npc and npc:FindFirstChild("Humanoid") and npc.Name == "EnemyNPC" then
+            npc.Humanoid:TakeDamage(20)
+            Notify("Đã đánh trúng!", "NPC còn "..math.floor(npc.Humanoid.Health).." máu", 2)
         end
     end)
 end
 
-function stopRecording()
-    if not isRecording then return end
-    isRecording = false; statusLabel.Text = "Status: Recording stopped. "..(#recordedActions/2).." actions saved."
-    if inputConnection then inputConnection:Disconnect(); inputConnection = nil end
+-- Tạo kiếm khi chạy script
+createSword()
+-- Tạo lại khi respawn
+localPlayer.CharacterAdded:Connect(function()
+    task.wait(1)
+    createSword()
+end)
+
+--// UI
+local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
+ScreenGui.Name = "FarmUI"
+
+local Frame = Instance.new("Frame", ScreenGui)
+Frame.Size = UDim2.new(0, 250, 0, 120)
+Frame.Position = UDim2.new(0.1, 0, 0.2, 0)
+Frame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+Frame.Active = true
+Frame.Draggable = true
+Frame.Visible = true
+
+local UIListLayout = Instance.new("UIListLayout", Frame)
+UIListLayout.Padding = UDim.new(0, 5)
+
+local spawnBtn = Instance.new("TextButton", Frame)
+spawnBtn.Text = "🐲 Spawn Mobs"
+spawnBtn.Size = UDim2.new(1, -10, 0, 40)
+spawnBtn.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+spawnBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+
+local farmBtn = Instance.new("TextButton", Frame)
+farmBtn.Text = "⚔️ Toggle Auto Farm"
+farmBtn.Size = UDim2.new(1, -10, 0, 40)
+farmBtn.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+farmBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+
+--// Nút nhỏ toggle UI (mobile)
+local toggleBtn = Instance.new("TextButton", ScreenGui)
+toggleBtn.Text = "📂"
+toggleBtn.Size = UDim2.new(0, 50, 0, 50)
+toggleBtn.Position = UDim2.new(0.9, 0, 0.05, 0)
+toggleBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+toggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+
+toggleBtn.MouseButton1Click:Connect(function()
+    Frame.Visible = not Frame.Visible
+end)
+
+--// NPC Spawner (Zombie Roblox cổ điển)
+local spawnPositions = {}
+local function createNPC(pos)
+    local npc = Instance.new("Model", workspace)
+    npc.Name = "EnemyNPC"
+
+    local hum = Instance.new("Humanoid")
+    hum.Health = 100
+    hum.MaxHealth = 100
+    hum.Parent = npc
+
+    -- Torso
+    local torso = Instance.new("Part")
+    torso.Name = "Torso"
+    torso.Size = Vector3.new(2, 2, 1)
+    torso.Position = pos
+    torso.Anchored = false
+    torso.Parent = npc
+    npc.PrimaryPart = torso
+
+    -- Head
+    local head = Instance.new("Part")
+    head.Name = "Head"
+    head.Size = Vector3.new(2, 1, 1)
+    head.Position = torso.Position + Vector3.new(0, 2, 0)
+    head.Anchored = false
+    head.Parent = npc
+
+    -- Face zombie
+    local face = Instance.new("Decal", head)
+    face.Texture = "rbxassetid://7074130" -- mặt zombie
+
+    -- Shirt + Pants (áo nâu + quần xanh zombie)
+    local shirt = Instance.new("Shirt", npc)
+    shirt.ShirtTemplate = "rbxassetid://7074141"
+
+    local pants = Instance.new("Pants", npc)
+    pants.PantsTemplate = "rbxassetid://7074121"
+
+    -- AI đơn giản
+    task.spawn(function()
+        while npc.Parent and hum.Health > 0 do
+            if localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                hum:MoveTo(localPlayer.Character.HumanoidRootPart.Position)
+            end
+            task.wait(1)
+        end
+    end)
+
+    -- Respawn khi chết
+    hum.Died:Connect(function()
+        task.wait(3)
+        createNPC(pos)
+    end)
+
+    return npc
 end
 
--- =======================================================================
--- == PHẦN 4: KẾT NỐI SỰ KIỆN (EVENT CONNECTIONS)                        ==
--- =======================================================================
+spawnBtn.MouseButton1Click:Connect(function()
+    if not localPlayer.Character then return end
+    local basePos = localPlayer.Character.Head.Position
+    local offsets = {
+        Vector3.new(10,0,0),
+        Vector3.new(-10,0,0),
+        Vector3.new(0,0,10),
+        Vector3.new(0,0,-10),
+        Vector3.new(15,0,15),
+    }
+    spawnPositions = {}
+    for _,offset in ipairs(offsets) do
+        table.insert(spawnPositions, basePos + offset)
+        createNPC(basePos + offset)
+    end
+    Notify("Spawn NPC", "Đã tạo Zombie quanh bạn!", 3)
+end)
 
-startRecordButton.MouseButton1Click:Connect(startRecording)
-stopRecordButton.MouseButton1Click:Connect(stopRecording)
-startPlaybackButton.MouseButton1Click:Connect(function() if #recordedActions == 0 then statusLabel.Text = "Status: Nothing to play!"; return end; if not isPlaying then startPlayback() end end)
-stopPlaybackButton.MouseButton1Click:Connect(function() if isPlaying then isPlaying = false; statusLabel.Text = "Status: Playback stopped." end end)
-recordSandPosButton.MouseButton1Click:Connect(function() savedSandPos = humanoidRootPart.CFrame; statusLabel.Text = "Sand position saved."; recordAction({type="teleport_sand"}) end)
-recordWaterPosButton.MouseButton1Click:Connect(function() savedWaterPos = humanoidRootPart.CFrame; statusLabel.Text = "Water position saved."; recordAction({type="teleport_water"}) end)
+--// Auto Farm
+local farming = false
 
+local function getClosestNPC()
+    local closest, dist = nil, math.huge
+    for _,npc in pairs(workspace:GetChildren()) do
+        if npc:IsA("Model") and npc.Name == "EnemyNPC" and npc:FindFirstChild("Humanoid") and npc.Humanoid.Health > 0 then
+            local npcRoot = npc.PrimaryPart
+            if npcRoot and localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                local mag = (npcRoot.Position - localPlayer.Character.HumanoidRootPart.Position).Magnitude
+                if mag < dist then
+                    closest = npc
+                    dist = mag
+                end
+            end
+        end
+    end
+    return closest
+end
+
+farmBtn.MouseButton1Click:Connect(function()
+    farming = not farming
+    if farming then
+        Notify("Auto Farm", "⚔️ Đang bật Auto Farm", 3)
+        createSword()
+        task.spawn(function()
+            while farming and task.wait(1) do
+                local char = localPlayer.Character
+                if not char or not char:FindFirstChild("Humanoid") then continue end
+                local hum = char.Humanoid
+                local npc = getClosestNPC()
+                if npc and npc.PrimaryPart then
+                    hum:MoveTo(npc.PrimaryPart.Position)
+                    local dist = (npc.PrimaryPart.Position - char.HumanoidRootPart.Position).Magnitude
+                    if dist < 5 then
+                        local sword = char:FindFirstChild("CoolSword")
+                        if sword then sword:Activate() end
+                    end
+                end
+            end
+        end)
+    else
+        Notify("Auto Farm", "⛔ Đã tắt Auto Farm", 3)
+    end
+end)
